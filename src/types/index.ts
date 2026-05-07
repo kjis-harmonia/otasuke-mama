@@ -8,22 +8,23 @@ export type PortionFeedback = 'just_right' | 'slightly_less' | 'much_less' | 'sl
 export type TasteFeedback = 'just_right' | 'slightly_bland' | 'slightly_salty' | 'sweeter' | 'too_sweet';
 export type RecipeMatchStatus = 'can_cook' | 'one_more' | 'two_more' | 'not_enough';
 
-// 定番品マスター（買い物・在庫・レシピの共通キー）
+// ─── マスターアイテム ───────────────────────────────────────
 export interface MasterItem {
-  id: string;           // 'egg', 'milk', 'tofu' など
-  name: string;         // '卵'
-  emoji: string;        // '🥚'
+  id: string;
+  name: string;
+  emoji: string;
   category: ItemCategory;
   subCategory: string;
   defaultUnit: string;
   defaultLocation: Location;
   isQuickAdd: boolean;
+  brandName?: string; // ブランド名（任意・表示は name を優先）
 }
 
-// 在庫アイテム
+// ─── 在庫アイテム ──────────────────────────────────────────
 export interface StockItem {
   id: string;
-  masterItemId: string; // MasterItem.id と紐付け
+  masterItemId: string;
   name: string;
   emoji: string;
   category: ItemCategory;
@@ -34,9 +35,10 @@ export interface StockItem {
   location: Location;
   memo: string;
   lastUpdatedAt: string;
+  brandName?: string; // ブランド名（任意）
 }
 
-// 冷凍・作り置きアイテム
+// ─── 冷凍・作り置き ────────────────────────────────────────
 export interface FrozenItem {
   id: string;
   masterItemId?: string;
@@ -49,10 +51,10 @@ export interface FrozenItem {
   memo: string;
 }
 
-// 買い物リストアイテム
+// ─── 買い物リスト ──────────────────────────────────────────
 export interface ShoppingItem {
   id: string;
-  masterItemId?: string; // MasterItem.id と紐付け（手入力の場合はundefined）
+  masterItemId?: string;
   name: string;
   emoji: string;
   category: ItemCategory;
@@ -62,7 +64,7 @@ export interface ShoppingItem {
   unit?: string;
 }
 
-// 支出エントリ
+// ─── 支出 ─────────────────────────────────────────────────
 export interface BudgetEntry {
   id: string;
   date: string;
@@ -72,14 +74,26 @@ export interface BudgetEntry {
   memo: string;
 }
 
-// レシピ
+// ─── レシピ ────────────────────────────────────────────────
+
+/**
+ * OR条件グループ：いずれか1つが在庫にあればOK
+ * 例: { label: 'ご飯', itemIds: ['cooked_rice', 'frozen_rice', 'rice'] }
+ */
+export interface RequiredGroup {
+  label: string;     // 表示ラベル（'ご飯'、'肉' など）
+  emoji: string;     // グループの絵文字
+  itemIds: string[]; // いずれか1つが在庫にあれば満たされる
+}
+
 export interface Recipe {
   id: string;
   name: string;
   emoji: string;
   tags: string[];
-  requiredItemIds: string[];   // MasterItem.id の配列
-  optionalItemIds: string[];   // MasterItem.id の配列
+  requiredItemIds: string[];       // 全て必要（AND条件）
+  requiredGroups?: RequiredGroup[]; // グループ内でいずれか1つ（OR条件）
+  optionalItemIds: string[];
   category: string;
   difficulty: '簡単' | '普通' | 'やや難';
   timeMinutes: number;
@@ -90,16 +104,27 @@ export interface Recipe {
   isSavingsMenu: boolean;
 }
 
-// レシピ照合結果
+// ─── レシピ照合 ────────────────────────────────────────────
+
+/**
+ * 不足している材料（単品またはグループ）の表示情報
+ */
+export interface MissingIngredient {
+  label: string;     // 日本語表示名（'ご飯'、'卵' など）
+  emoji: string;
+  primaryId: string; // 買い物リストへ追加する代表ID
+  allIds: string[];  // グループの場合は複数ID
+}
+
 export interface RecipeMatch {
   recipe: Recipe;
   status: RecipeMatchStatus;
-  missingItems: MasterItem[];
-  usesLowStock: boolean;    // 残りわずか食材を使える
-  usesFridge: boolean;      // 冷蔵庫の食材を消費できる
+  missing: MissingIngredient[];  // 不足材料（単品・グループ統一）
+  usesLowStock: boolean;
+  usesFridge: boolean;
 }
 
-// レシピフィードバック
+// ─── フィードバック ────────────────────────────────────────
 export interface RecipeFeedback {
   recipeId: string;
   cookedAt: string;
@@ -107,7 +132,7 @@ export interface RecipeFeedback {
   tasteFeedback: TasteFeedback;
 }
 
-// 家族設定
+// ─── 設定 ─────────────────────────────────────────────────
 export interface FamilySettings {
   adults: number;
   children: number;
@@ -116,20 +141,19 @@ export interface FamilySettings {
   tastePreference: TastePreference;
 }
 
-// 週予算
 export interface WeeklyBudget {
   amount: number;
   weekStartDate: string;
 }
 
-// 代用食材
+// ─── 代用食材 ─────────────────────────────────────────────
 export interface Substitution {
-  originalId: string;    // 代用される食材のmasterItemId
-  substituteIds: string[]; // 代わりになり得る食材のmasterItemId
-  note: string;          // '似た風味で使えます'
+  originalId: string;
+  substituteIds: string[];
+  note: string;
 }
 
-// アプリ全体の状態
+// ─── アプリ全体 ───────────────────────────────────────────
 export interface AppState {
   stock: StockItem[];
   frozenItems: FrozenItem[];

@@ -16,22 +16,63 @@ interface Props {
 
 export default function BottomNav({ activeTab, onTabChange }: Props) {
   return (
-    <nav
-      className="fixed bottom-0 bg-white border-t border-gray-100 shadow-lg"
-      style={{ width: '100%', maxWidth: '430px', left: '50%', transform: 'translateX(-50%)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-    >
-      <div className="flex">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className="flex-1 flex flex-col items-center justify-center py-2 transition-colors"
-            style={{ color: activeTab === tab.id ? '#F97316' : '#9CA3AF' }}
-          >
-            <span className="text-xl leading-tight">{tab.emoji}</span>
-            <span className="font-medium leading-tight" style={{ fontSize: '9px' }}>{tab.label}</span>
-          </button>
-        ))}
+    <nav style={{
+      position: 'fixed',
+      bottom: 0,
+      width: '100%',
+      maxWidth: '430px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      backgroundColor: '#FFFFFF',
+      boxShadow: '0 -2px 16px rgba(180,120,100,0.12)',
+      paddingBottom: 'env(safe-area-inset-bottom, 4px)',
+      zIndex: 50,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'stretch' }}>
+        {TABS.map(tab => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px 2px 8px',
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              {/* ピル型背景（アクティブ時のみ） */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '2px',
+                padding: '5px 10px 4px',
+                borderRadius: '20px',
+                backgroundColor: isActive ? '#FFE3D5' : 'transparent',
+                transition: 'background-color 0.15s ease',
+              }}>
+                <span style={{ fontSize: '20px', lineHeight: 1.1 }}>{tab.emoji}</span>
+                <span style={{
+                  fontSize: '10px',
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? '#D4604A' : '#B0A098',
+                  letterSpacing: '-0.2px',
+                  lineHeight: 1,
+                }}>
+                  {tab.label}
+                </span>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </nav>
   );

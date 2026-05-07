@@ -2,16 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
+*,
+*::before,
+*::after {
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
+html,
 body {
-  background-color: #FFF8F0;
+  /* PC表示時の外側背景：ピンクベージュ */
+  background-color: #EDD5C8;
   font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.tab-safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+/* スクロールバー非表示（モバイル的に） */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  scrollbar-width: none;
 }

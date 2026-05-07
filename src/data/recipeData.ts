@@ -1,14 +1,22 @@
-import type { Recipe } from '../types';
+import type { Recipe, RequiredGroup } from '../types';
+
+// ご飯系グループ：どれか1つあればOK
+const RICE_GROUP: RequiredGroup = {
+  label: 'ご飯',
+  emoji: '🍚',
+  itemIds: ['cooked_rice', 'frozen_rice', 'pack_rice', 'rice'],
+};
 
 export const recipeData: Recipe[] = [
   {
     id: 'r1', name: '親子丼', emoji: '🍚',
     tags: ['卵', '鶏肉', 'ご飯'],
     requiredItemIds: ['egg', 'chicken_thigh', 'onion'],
-    optionalItemIds: ['soy_sauce', 'rice'],
+    requiredGroups: [RICE_GROUP],
+    optionalItemIds: ['soy_sauce'],
     category: '丼・ご飯もの', difficulty: '簡単', timeMinutes: 20,
     portionNote: '2〜3人分（よく食べる家庭は多め）',
-    ingredientsSimple: '鶏もも肉：1〜2枚くらい\n卵：5〜6個\n玉ねぎ：1個',
+    ingredientsSimple: '鶏もも肉：1〜2枚くらい\n卵：5〜6個\n玉ねぎ：1個\nご飯：2〜3杯分',
     seasoningSimple: 'しょうゆ：大さじ2〜3\nみりん：大さじ3\n砂糖：小さじ2〜大さじ1\nだし：200ml',
     tips: '卵は半熟にすると美味しい。出汁は多めにするとしみやすい。',
     isSavingsMenu: false,
@@ -17,10 +25,11 @@ export const recipeData: Recipe[] = [
     id: 'r2', name: 'カレー', emoji: '🍛',
     tags: ['野菜', '肉類', 'ご飯'],
     requiredItemIds: ['potato', 'onion', 'carrot'],
+    requiredGroups: [RICE_GROUP],
     optionalItemIds: ['chicken_thigh', 'pork_cut'],
     category: '煮込み', difficulty: '簡単', timeMinutes: 40,
     portionNote: '4人分（多めに作って翌日もOK）',
-    ingredientsSimple: 'じゃがいも：3〜4個\n玉ねぎ：1〜2個\nにんじん：1〜2本\n肉：お好みで200〜300g',
+    ingredientsSimple: 'じゃがいも：3〜4個\n玉ねぎ：1〜2個\nにんじん：1〜2本\n肉：お好みで200〜300g\nご飯：4杯分',
     seasoningSimple: 'カレールー：1/2箱（4〜5皿分）\n水：700〜800ml',
     tips: '一晩置くと味がなじんでさらに美味しい。冷凍も可能。',
     isSavingsMenu: true,
@@ -53,7 +62,8 @@ export const recipeData: Recipe[] = [
     id: 'r5', name: 'オムライス', emoji: '🍳',
     tags: ['卵', 'ご飯'],
     requiredItemIds: ['egg'],
-    optionalItemIds: ['rice', 'onion'],
+    requiredGroups: [RICE_GROUP],
+    optionalItemIds: ['onion'],
     category: '洋食', difficulty: '普通', timeMinutes: 25,
     portionNote: '2人分',
     ingredientsSimple: '卵：4〜6個\nご飯：2杯分\n玉ねぎ：1/2個',
@@ -112,7 +122,8 @@ export const recipeData: Recipe[] = [
   {
     id: 'r10', name: 'チャーハン', emoji: '🍳',
     tags: ['ご飯', '卵'],
-    requiredItemIds: ['egg', 'rice'],
+    requiredItemIds: ['egg'],
+    requiredGroups: [RICE_GROUP],
     optionalItemIds: ['onion'],
     category: 'ご飯もの', difficulty: '普通', timeMinutes: 15,
     portionNote: '2人分',

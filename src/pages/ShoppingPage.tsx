@@ -3,87 +3,222 @@ import type { UseShoppingListReturn } from '../hooks/useShoppingList';
 import type { UseStockReturn } from '../hooks/useStock';
 import type { ShoppingItem, ItemCategory } from '../types';
 import ItemQuickAddGrid from '../components/ItemQuickAddGrid';
-import Card from '../components/Card';
-import PrimaryButton from '../components/PrimaryButton';
 
 interface Props {
   shopping: UseShoppingListReturn;
   stock: UseStockReturn;
 }
 
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  border: '1.5px solid #EDD5C8',
+  borderRadius: '12px',
+  padding: '10px 14px',
+  fontSize: '14px',
+  backgroundColor: '#FFFAF7',
+  outline: 'none',
+  color: '#2F2F3A',
+};
+
 export default function ShoppingPage({ shopping, stock }: Props) {
   const [showManual, setShowManual] = useState(false);
   const [manual, setManual] = useState({ name: '', emoji: '🛒', category: 'food' as ItemCategory });
-  const [justAdded, setJustAdded] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (name: string) => {
+    setToast(name);
+    setTimeout(() => setToast(null), 1800);
+  };
 
   const handleAddToStock = (item: ShoppingItem) => {
-    if (item.masterItemId) {
-      stock.addStockItem(item.masterItemId);
-    }
+    if (item.masterItemId) stock.addStockItem(item.masterItemId);
     shopping.remove(item.id);
   };
 
-  const showAdded = (name: string) => {
-    setJustAdded(name);
-    setTimeout(() => setJustAdded(null), 1500);
+  const handleManualAdd = () => {
+    if (!manual.name.trim()) return;
+    const added = shopping.addByName(manual.name.trim(), manual.emoji, manual.category);
+    if (added) {
+      showToast(manual.name.trim());
+      setManual({ name: '', emoji: '🛒', category: 'food' });
+    }
   };
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-bold text-gray-800">🛒 買い物リスト</h1>
+    <div style={{ padding: '16px 16px 8px' }}>
 
-      {/* トースト */}
-      {justAdded && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg z-50">
-          ✓ {justAdded} を追加しました
+      {/* トースト通知 */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#1A8A56',
+          color: '#fff',
+          padding: '10px 20px',
+          borderRadius: '24px',
+          fontSize: '13px',
+          fontWeight: 600,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+          zIndex: 100,
+          whiteSpace: 'nowrap',
+        }}>
+          ✓ {toast} をリストに追加しました
         </div>
       )}
 
-      {/* 今日の買い物リスト */}
-      <Card>
-        <h2 className="font-bold text-gray-800 mb-3">📋 今日の買い物リスト</h2>
+      {/* ─── セクション1：タップで追加（主役） ─── */}
+      <div style={{ marginBottom: '20px' }}>
+        {/* セクションヘッダー */}
+        <div style={{
+          backgroundColor: '#F48A7A',
+          borderRadius: '16px 16px 0 0',
+          padding: '12px 16px 10px',
+        }}>
+          <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '16px', margin: 0 }}>
+            📸 よく買うものをタップで追加
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', margin: '2px 0 0' }}>
+            文字を打たずにポンポン追加できます
+          </p>
+        </div>
+        <div style={{
+          backgroundColor: '#fff',
+          borderRadius: '0 0 16px 16px',
+          padding: '16px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+        }}>
+          <ItemQuickAddGrid shopping={shopping} onAdded={showToast} />
+        </div>
+      </div>
+
+      {/* ─── セクション2：今日の買い物リスト ─── */}
+      <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <h2 style={{ fontWeight: 700, color: '#2F2F3A', fontSize: '15px', margin: 0 }}>
+            📋 今日の買い物リスト
+          </h2>
+          <span style={{
+            backgroundColor: shopping.uncheckedItems.length > 0 ? '#FFE3D5' : '#F0E8E4',
+            color: shopping.uncheckedItems.length > 0 ? '#B85A28' : '#A09890',
+            fontWeight: 700,
+            fontSize: '13px',
+            padding: '2px 10px',
+            borderRadius: '20px',
+          }}>
+            {shopping.uncheckedItems.length}件
+          </span>
+        </div>
+
         {shopping.list.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">リストは空です。下から追加してください。</p>
+          <div style={{ textAlign: 'center', padding: '20px 0', color: '#B0A098', fontSize: '14px' }}>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>🛒</div>
+            上のグリッドからタップして追加してください
+          </div>
         ) : (
-          <div className="space-y-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* 未購入 */}
             {shopping.uncheckedItems.map(item => (
-              <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: '#FFF8F0' }}>
+              <div
+                key={item.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  backgroundColor: '#FFF8F1',
+                  borderRadius: '12px',
+                }}
+              >
                 <button
                   onClick={() => shopping.toggle(item.id)}
-                  className="w-6 h-6 rounded-full border-2 border-orange-300 flex items-center justify-center flex-shrink-0 active:scale-95"
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    border: '2.5px solid #F48A7A',
+                    backgroundColor: 'transparent',
+                    flexShrink: 0,
+                    cursor: 'pointer',
+                  }}
+                  className="active:scale-95"
                 />
-                <span className="text-lg flex-shrink-0">{item.emoji}</span>
-                <span className="flex-1 text-sm font-medium text-gray-800">{item.name}</span>
-                <button onClick={() => shopping.remove(item.id)} className="text-gray-300 text-xs px-2 py-1 active:scale-95">✕</button>
+                <span style={{ fontSize: '20px', flexShrink: 0 }}>{item.emoji}</span>
+                <span style={{ flex: 1, fontSize: '15px', fontWeight: 500, color: '#2F2F3A' }}>{item.name}</span>
+                <button
+                  onClick={() => shopping.remove(item.id)}
+                  style={{ color: '#D0B8B0', fontSize: '16px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', lineHeight: 1 }}
+                >
+                  ✕
+                </button>
               </div>
             ))}
 
+            {/* 購入済み */}
             {shopping.checkedItems.length > 0 && (
               <>
-                <div className="pt-2 pb-1">
-                  <p className="text-xs text-gray-400 font-medium">購入済み</p>
+                <div style={{ padding: '8px 0 4px' }}>
+                  <span style={{ fontSize: '12px', color: '#A09890', fontWeight: 600 }}>購入済み</span>
                 </div>
                 {shopping.checkedItems.map(item => (
-                  <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 opacity-60">
+                  <div
+                    key={item.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '10px 14px',
+                      backgroundColor: '#F4F0EE',
+                      borderRadius: '12px',
+                      opacity: 0.7,
+                    }}
+                  >
                     <button
                       onClick={() => shopping.toggle(item.id)}
-                      className="w-6 h-6 rounded-full bg-green-400 flex items-center justify-center flex-shrink-0 active:scale-95"
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        backgroundColor: '#A9DCC4',
+                        border: 'none',
+                        flexShrink: 0,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#0F5C3A',
+                        fontWeight: 700,
+                        fontSize: '13px',
+                      }}
+                      className="active:scale-95"
                     >
-                      <span className="text-white text-xs">✓</span>
+                      ✓
                     </button>
-                    <span className="text-lg flex-shrink-0">{item.emoji}</span>
-                    <span className="flex-1 text-sm text-gray-500 line-through">{item.name}</span>
+                    <span style={{ fontSize: '20px', flexShrink: 0 }}>{item.emoji}</span>
+                    <span style={{ flex: 1, fontSize: '14px', color: '#A09890', textDecoration: 'line-through' }}>{item.name}</span>
                     <button
                       onClick={() => handleAddToStock(item)}
-                      className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-lg active:scale-95"
-                    >在庫へ</button>
+                      style={{
+                        fontSize: '12px',
+                        backgroundColor: '#A8CFF0',
+                        color: '#1A507A',
+                        padding: '5px 10px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                      }}
+                      className="active:scale-95"
+                    >
+                      在庫へ
+                    </button>
                   </div>
                 ))}
                 <button
-                  onClick={() => {
-                    if (window.confirm('購入済みをすべて削除しますか？')) shopping.clearChecked();
-                  }}
-                  className="w-full py-2 text-xs text-gray-400 active:scale-95"
+                  onClick={() => { if (window.confirm('購入済みをすべて削除しますか？')) shopping.clearChecked(); }}
+                  style={{ width: '100%', padding: '8px', fontSize: '12px', color: '#A09890', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   購入済みを削除
                 </button>
@@ -91,40 +226,47 @@ export default function ShoppingPage({ shopping, stock }: Props) {
             )}
           </div>
         )}
-      </Card>
+      </div>
 
-      {/* 写真タップ式追加 */}
-      <Card>
-        <h2 className="font-bold text-gray-800 mb-3">📸 タップで追加</h2>
-        <ItemQuickAddGrid shopping={shopping} />
-      </Card>
+      {/* ─── セクション3：手入力（補助・折りたたみ） ─── */}
+      <button
+        onClick={() => setShowManual(!showManual)}
+        style={{
+          width: '100%',
+          padding: '12px',
+          backgroundColor: '#F0E8E4',
+          color: '#8C7068',
+          borderRadius: '12px',
+          fontSize: '13px',
+          fontWeight: 600,
+          border: 'none',
+          cursor: 'pointer',
+          marginBottom: showManual ? '8px' : '0',
+        }}
+        className="active:scale-95 transition-transform"
+      >
+        {showManual ? '▲ その他・手入力を閉じる' : '▼ その他を手入力で追加（補助機能）'}
+      </button>
 
-      {/* 手入力 */}
-      <div>
-        <button
-          onClick={() => setShowManual(!showManual)}
-          className="w-full py-3 text-sm text-gray-500 bg-white rounded-2xl shadow-sm active:scale-95 transition-transform"
-        >
-          {showManual ? '▲ 手入力を閉じる' : '▼ その他を手入力で追加'}
-        </button>
-
-        {showManual && (
-          <div className="mt-3 bg-white rounded-2xl p-4 shadow-sm space-y-3">
-            <div className="flex gap-2">
+      {showManual && (
+        <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               <input
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm"
+                style={{ ...inputStyle, flex: 1 }}
                 placeholder="商品名を入力"
                 value={manual.name}
                 onChange={e => setManual(p => ({ ...p, name: e.target.value }))}
+                onKeyDown={e => { if (e.key === 'Enter') handleManualAdd(); }}
               />
               <input
-                className="w-12 border border-gray-200 rounded-xl px-2 py-2.5 text-center text-xl"
+                style={{ ...inputStyle, width: '52px', flex: 'none', textAlign: 'center', fontSize: '20px', padding: '10px 6px' }}
                 value={manual.emoji}
                 onChange={e => setManual(p => ({ ...p, emoji: e.target.value }))}
               />
             </div>
             <select
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm"
+              style={{ ...inputStyle, cursor: 'pointer' }}
               value={manual.category}
               onChange={e => setManual(p => ({ ...p, category: e.target.value as ItemCategory }))}
             >
@@ -132,23 +274,16 @@ export default function ShoppingPage({ shopping, stock }: Props) {
               <option value="daily">日用品</option>
               <option value="baby">子ども用品</option>
             </select>
-            <PrimaryButton
-              size="lg"
-              className="w-full"
-              onClick={() => {
-                if (!manual.name.trim()) return;
-                const added = shopping.addByName(manual.name.trim(), manual.emoji, manual.category);
-                if (added) {
-                  showAdded(manual.name.trim());
-                  setManual({ name: '', emoji: '🛒', category: 'food' });
-                }
-              }}
+            <button
+              onClick={handleManualAdd}
+              style={{ minHeight: '48px', backgroundColor: '#F48A7A', color: '#fff', borderRadius: '14px', fontWeight: 700, fontSize: '15px', border: 'none', cursor: 'pointer' }}
+              className="active:scale-95 transition-transform"
             >
               追加する
-            </PrimaryButton>
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

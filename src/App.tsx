@@ -16,9 +16,9 @@ export type TabName = 'home' | 'inventory' | 'shopping' | 'budget' | 'recipes' |
 function App() {
   const [activeTab, setActiveTab] = useState<TabName>('home');
 
-  const stockHook = useStock();
+  const stockHook   = useStock();
   const shoppingHook = useShoppingList();
-  const budgetHook = useBudget();
+  const budgetHook  = useBudget();
   const recipesHook = useRecipes(stockHook.stock, budgetHook.remaining);
 
   const resetAll = () => {
@@ -28,21 +28,39 @@ function App() {
 
   const renderPage = () => {
     switch (activeTab) {
-      case 'home':      return <HomePage stock={stockHook} shopping={shoppingHook} budget={budgetHook} recipes={recipesHook} onTabChange={setActiveTab} />;
+      case 'home':      return <HomePage      stock={stockHook} shopping={shoppingHook} budget={budgetHook} recipes={recipesHook} onTabChange={setActiveTab} />;
       case 'inventory': return <InventoryPage stock={stockHook} shopping={shoppingHook} />;
-      case 'shopping':  return <ShoppingPage shopping={shoppingHook} stock={stockHook} />;
-      case 'budget':    return <BudgetPage budget={budgetHook} />;
-      case 'recipes':   return <RecipesPage recipes={recipesHook} shopping={shoppingHook} stock={stockHook} />;
-      case 'settings':  return <SettingsPage budget={budgetHook} onReset={resetAll} />;
+      case 'shopping':  return <ShoppingPage  shopping={shoppingHook} stock={stockHook} />;
+      case 'budget':    return <BudgetPage    budget={budgetHook} />;
+      case 'recipes':   return <RecipesPage   recipes={recipesHook} shopping={shoppingHook} stock={stockHook} />;
+      case 'settings':  return <SettingsPage  budget={budgetHook} onReset={resetAll} />;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#FFF8F0', maxWidth: '430px', margin: '0 auto' }}>
-      <main className="flex-1 overflow-y-auto pb-20">
-        {renderPage()}
-      </main>
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+    /* PC表示：ピンクベージュ背景に中央配置のスマホシェル */
+    <div style={{
+      minHeight: '100svh',
+      backgroundColor: '#EDD5C8',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '430px',
+        minHeight: '100svh',
+        backgroundColor: '#FFF8F1',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 0 48px rgba(0,0,0,0.14)',
+      }}>
+        <main style={{ flex: 1, overflowY: 'auto', paddingBottom: '80px' }}>
+          {renderPage()}
+        </main>
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
     </div>
   );
 }

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import type { UseRecipesReturn } from '../hooks/useRecipes';
 import type { UseShoppingListReturn } from '../hooks/useShoppingList';
 import type { UseStockReturn } from '../hooks/useStock';
-import type { RecipeMatch, PortionFeedback, TasteFeedback } from '../types';
-import { substitutions, getSubstitutionNote } from '../data/substitutions';
+import type { RecipeMatch, MissingIngredient, PortionFeedback, TasteFeedback } from '../types';
+import { substitutions } from '../data/substitutions';
 
 interface Props {
   recipes: UseRecipesReturn;
@@ -14,140 +14,175 @@ interface Props {
 type RecipeTab = 'can_cook' | 'one_more' | 'two_more' | 'savings';
 
 const portionFeedbackOptions: { value: PortionFeedback; label: string }[] = [
-  { value: 'much_less',    label: 'かなり少なかった' },
+  { value: 'much_less',     label: 'かなり少なかった' },
   { value: 'slightly_less', label: '少し少なかった' },
-  { value: 'just_right',   label: 'ちょうどよかった' },
+  { value: 'just_right',    label: 'ちょうどよかった' },
   { value: 'slightly_more', label: '少し多かった' },
-  { value: 'much_more',    label: 'たくさん余った' },
+  { value: 'much_more',     label: 'たくさん余った' },
 ];
 
 const tasteFeedbackOptions: { value: TasteFeedback; label: string }[] = [
-  { value: 'slightly_bland',  label: '少し薄かった' },
-  { value: 'just_right',      label: 'ちょうどよかった' },
-  { value: 'slightly_salty',  label: '少し濃かった' },
-  { value: 'sweeter',         label: 'もう少し甘め' },
-  { value: 'too_sweet',       label: '甘すぎた' },
+  { value: 'slightly_bland', label: '少し薄かった' },
+  { value: 'just_right',     label: 'ちょうどよかった' },
+  { value: 'slightly_salty', label: '少し濃かった' },
+  { value: 'sweeter',        label: 'もう少し甘め' },
+  { value: 'too_sweet',      label: '甘すぎた' },
 ];
 
 function RecipeCard({ match, onCook, onAddMissingToShopping }: {
   match: RecipeMatch;
   onCook: () => void;
-  onAddMissingToShopping: (masterItemId: string) => void;
+  onAddMissingToShopping: (primaryId: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { recipe, status, missingItems, usesLowStock } = match;
+  const { recipe, status, missing, usesLowStock } = match;
+
+  const missingCount = missing.length;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-      <button className="w-full p-4 text-left" onClick={() => setExpanded(!expanded)}>
-        <div className="flex items-start gap-3">
-          <span className="text-3xl">{recipe.emoji}</span>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-bold text-gray-800">{recipe.name}</p>
+    <div style={{ backgroundColor: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+      <button
+        style={{ width: '100%', padding: '16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <span style={{ fontSize: '32px', lineHeight: 1 }}>{recipe.emoji}</span>
+          <div style={{ flex: 1 }}>
+            {/* タイトル行 */}
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginBottom: '4px' }}>
+              <span style={{ fontWeight: 700, color: '#2F2F3A', fontSize: '16px' }}>{recipe.name}</span>
               {recipe.isSavingsMenu && (
-                <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium">💰 節約</span>
+                <span style={{ fontSize: '11px', backgroundColor: '#FEF9C3', color: '#92400E', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>💰 節約</span>
               )}
               {usesLowStock && (
-                <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">在庫消費</span>
+                <span style={{ fontSize: '11px', backgroundColor: '#FFE3D5', color: '#B85A28', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>在庫消費</span>
               )}
             </div>
-            <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+
+            {/* メタ情報 */}
+            <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: '#A09890', marginBottom: '6px' }}>
               <span>⏱ {recipe.timeMinutes}分</span>
               <span>👨‍🍳 {recipe.difficulty}</span>
-              <span>🍽️ {recipe.category}</span>
             </div>
 
             {/* ステータス表示 */}
             {status === 'can_cook' && (
-              <p className="text-xs text-green-600 mt-1 font-medium">✓ 材料がそろっています</p>
+              <p style={{ fontSize: '13px', color: '#1A8A56', fontWeight: 600 }}>✅ 材料がそろっています</p>
             )}
-            {status === 'one_more' && missingItems.length > 0 && (
-              <div className="mt-1.5">
-                <p className="text-xs text-orange-500 font-medium mb-1">あと1品で作れます：</p>
-                <div className="flex flex-wrap gap-1">
-                  {missingItems.map(item => {
-                    // 代用候補を探す
-                    const subEntry = substitutions.find(s => s.originalId === item.id);
+            {status === 'one_more' && missingCount > 0 && (
+              <div>
+                <p style={{ fontSize: '12px', color: '#C87430', fontWeight: 600, marginBottom: '4px' }}>
+                  あと1品で作れます：
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {missing.map((m: MissingIngredient) => {
+                    const hasSub = substitutions.some(s => m.allIds.includes(s.originalId));
                     return (
-                      <div key={item.id} className="flex items-center gap-1">
-                        <span className="text-xs bg-red-50 text-red-500 px-2 py-0.5 rounded-full">
-                          {item.emoji} {item.name}
+                      <span key={m.primaryId} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                        <span style={{ fontSize: '12px', backgroundColor: '#FFE8C4', color: '#B86820', padding: '3px 10px', borderRadius: '20px', fontWeight: 600 }}>
+                          {m.emoji} {m.label}
                         </span>
-                        {subEntry && (
-                          <span className="text-xs text-gray-400">
-                            または {subEntry.substituteIds.map(sid => {
-                              const note = getSubstitutionNote(item.id, sid, substitutions);
-                              return note ? `(${note})` : '';
-                            }).join('')}
-                          </span>
+                        {hasSub && (
+                          <span style={{ fontSize: '11px', color: '#A09890' }}>（代用可）</span>
                         )}
-                      </div>
+                      </span>
                     );
                   })}
                 </div>
               </div>
             )}
-            {status === 'two_more' && missingItems.length > 0 && (
-              <div className="mt-1.5 flex flex-wrap gap-1">
-                {missingItems.map(item => (
-                  <span key={item.id} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                    {item.emoji} {item.name} が必要
+            {status === 'two_more' && missingCount > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                {missing.map((m: MissingIngredient) => (
+                  <span key={m.primaryId} style={{ fontSize: '12px', backgroundColor: '#F0E8E4', color: '#8C7068', padding: '3px 10px', borderRadius: '20px' }}>
+                    {m.emoji} {m.label} が必要
                   </span>
                 ))}
               </div>
             )}
           </div>
-          <span className="text-gray-400">{expanded ? '▲' : '▼'}</span>
+          <span style={{ color: '#C0A898', fontSize: '13px', flexShrink: 0 }}>{expanded ? '▲' : '▼'}</span>
         </div>
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-gray-100">
-          <div className="pt-3">
-            <p className="text-xs font-bold text-gray-500 mb-1">目安の量</p>
-            <p className="text-sm text-gray-700 bg-gray-50 rounded-xl px-3 py-2">{recipe.portionNote}</p>
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-500 mb-1">材料</p>
-            <pre className="text-sm text-gray-700 bg-gray-50 rounded-xl px-3 py-2 whitespace-pre-wrap font-sans">{recipe.ingredientsSimple}</pre>
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-500 mb-1">調味料</p>
-            <pre className="text-sm text-gray-700 bg-gray-50 rounded-xl px-3 py-2 whitespace-pre-wrap font-sans">{recipe.seasoningSimple}</pre>
-          </div>
-          <div>
-            <p className="text-xs font-bold text-gray-500 mb-1">コツ</p>
-            <p className="text-sm text-gray-700 bg-yellow-50 rounded-xl px-3 py-2">{recipe.tips}</p>
-          </div>
-
-          {/* 不足食材を買い物リストへ追加 */}
-          {missingItems.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-gray-500">不足食材を買い物リストへ追加</p>
-              <div className="flex flex-wrap gap-2">
-                {missingItems.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => onAddMissingToShopping(item.id)}
-                    className="text-xs px-3 py-2 rounded-xl bg-orange-50 text-orange-700 border border-orange-200 active:scale-95 font-medium"
-                  >
-                    🛒 {item.emoji} {item.name}を追加
-                  </button>
-                ))}
-              </div>
+        <div style={{ padding: '0 16px 16px', borderTop: '1px solid #F0E8E4' }}>
+          <div style={{ paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#A09890', marginBottom: '4px' }}>目安の量</p>
+              <p style={{ fontSize: '14px', color: '#2F2F3A', backgroundColor: '#FFF8F1', borderRadius: '12px', padding: '10px 14px' }}>
+                {recipe.portionNote}
+              </p>
             </div>
-          )}
+            <div>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#A09890', marginBottom: '4px' }}>材料</p>
+              <pre style={{ fontSize: '14px', color: '#2F2F3A', backgroundColor: '#FFF8F1', borderRadius: '12px', padding: '10px 14px', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>
+                {recipe.ingredientsSimple}
+              </pre>
+            </div>
+            <div>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#A09890', marginBottom: '4px' }}>調味料</p>
+              <pre style={{ fontSize: '14px', color: '#2F2F3A', backgroundColor: '#FFF8F1', borderRadius: '12px', padding: '10px 14px', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>
+                {recipe.seasoningSimple}
+              </pre>
+            </div>
+            <div>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#A09890', marginBottom: '4px' }}>コツ</p>
+              <p style={{ fontSize: '14px', color: '#2F2F3A', backgroundColor: '#FFFBF0', borderRadius: '12px', padding: '10px 14px' }}>
+                {recipe.tips}
+              </p>
+            </div>
 
-          {status === 'can_cook' && (
-            <button
-              onClick={onCook}
-              className="w-full py-3 rounded-xl text-white font-bold active:scale-95 transition-transform"
-              style={{ backgroundColor: '#F97316' }}
-            >
-              🍳 作った！在庫を減らす
-            </button>
-          )}
+            {/* 不足食材を買い物リストへ */}
+            {missing.length > 0 && (
+              <div>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: '#A09890', marginBottom: '6px' }}>
+                  不足食材を買い物リストへ追加
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {missing.map((m: MissingIngredient) => (
+                    <button
+                      key={m.primaryId}
+                      onClick={() => onAddMissingToShopping(m.primaryId)}
+                      style={{
+                        fontSize: '13px',
+                        padding: '8px 14px',
+                        borderRadius: '12px',
+                        backgroundColor: '#FFE3D5',
+                        color: '#B85A28',
+                        border: '1.5px solid #F4C4A8',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                      }}
+                      className="active:scale-95"
+                    >
+                      🛒 {m.emoji} {m.label}を追加
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {status === 'can_cook' && (
+              <button
+                onClick={onCook}
+                style={{
+                  width: '100%',
+                  minHeight: '48px',
+                  backgroundColor: '#F48A7A',
+                  color: '#fff',
+                  borderRadius: '14px',
+                  fontWeight: 700,
+                  fontSize: '15px',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                className="active:scale-95 transition-transform"
+              >
+                🍳 作った！在庫を減らす
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -161,9 +196,16 @@ export default function RecipesPage({ recipes, shopping, stock }: Props) {
   const [tasteFeedback, setTasteFeedback] = useState<TasteFeedback>('just_right');
 
   const handleCook = (match: RecipeMatch) => {
-    // 在庫を減らす
+    // requiredItems の在庫を減らす
     match.recipe.requiredItemIds.forEach(masterItemId => {
       stock.decrementByMasterItemId(masterItemId, 1);
+    });
+    // requiredGroups の在庫を減らす（グループ内で在庫がある最初のものを1減）
+    (match.recipe.requiredGroups ?? []).forEach(group => {
+      const available = group.itemIds.find(id =>
+        stock.stock.some(s => s.masterItemId === id && s.stockStatus !== 'empty')
+      );
+      if (available) stock.decrementByMasterItemId(available, 1);
     });
     setFeedbackMode(match.recipe.id);
   };
@@ -175,15 +217,15 @@ export default function RecipesPage({ recipes, shopping, stock }: Props) {
     setTasteFeedback('just_right');
   };
 
-  const handleAddMissingToShopping = (masterItemId: string) => {
-    shopping.addByMasterItemId(masterItemId);
+  const handleAddMissingToShopping = (primaryId: string) => {
+    shopping.addByMasterItemId(primaryId);
   };
 
   const tabs: { id: RecipeTab; label: string; emoji: string; count: number }[] = [
-    { id: 'can_cook',  label: '今作れる',    emoji: '✅', count: recipes.canCook.length },
-    { id: 'one_more',  label: 'あと1品',     emoji: '🛒', count: recipes.oneMissing.length },
-    { id: 'two_more',  label: 'あと2品',     emoji: '📋', count: recipes.twoMissing.length },
-    { id: 'savings',   label: '節約メニュー', emoji: '💰', count: recipes.savingsMenu.length },
+    { id: 'can_cook', label: '今作れる',    emoji: '✅', count: recipes.canCook.length },
+    { id: 'one_more', label: 'あと1品',     emoji: '🛒', count: recipes.oneMissing.length },
+    { id: 'two_more', label: 'あと2品',     emoji: '📋', count: recipes.twoMissing.length },
+    { id: 'savings',  label: '節約メニュー', emoji: '💰', count: recipes.savingsMenu.length },
   ];
 
   const displayMatches =
@@ -193,56 +235,83 @@ export default function RecipesPage({ recipes, shopping, stock }: Props) {
     recipes.savingsMenu;
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="pt-2">
-        <h1 className="text-xl font-bold text-gray-800">🍳 うちレシピ</h1>
-        <p className="text-sm text-gray-500 mt-0.5">在庫から作れるメニューを提案</p>
+    <div style={{ padding: '16px 16px 8px' }}>
+      <div style={{ paddingTop: '8px', marginBottom: '16px' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#2F2F3A', margin: 0 }}>🍳 うちレシピ</h1>
+        <p style={{ fontSize: '13px', color: '#A09890', margin: '4px 0 0' }}>在庫から作れるメニューを提案</p>
       </div>
 
       {/* タブ */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className="flex-shrink-0 px-3 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-1"
-            style={activeTab === tab.id ? { backgroundColor: '#F97316', color: '#fff' } : { backgroundColor: '#F3F4F6', color: '#6B7280' }}
-          >
-            <span>{tab.emoji}</span>
-            <span>{tab.label}</span>
-            <span
-              className="text-xs rounded-full px-1.5 font-bold ml-1"
-              style={activeTab === tab.id ? { backgroundColor: '#fff', color: '#F97316' } : { backgroundColor: '#E5E7EB', color: '#6B7280' }}
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '16px' }}>
+        {tabs.map(tab => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '8px 12px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: isActive ? '#F48A7A' : '#F0E8E4',
+                color: isActive ? '#fff' : '#8C7068',
+              }}
+              className="active:scale-95"
             >
-              {tab.count}
-            </span>
-          </button>
-        ))}
+              <span>{tab.emoji}</span>
+              <span>{tab.label}</span>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                padding: '1px 6px',
+                borderRadius: '10px',
+                backgroundColor: isActive ? 'rgba(255,255,255,0.3)' : '#E0D4CE',
+                color: isActive ? '#fff' : '#8C7068',
+              }}>
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* フィードバックモーダル */}
       {feedbackMode && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-end z-50"
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-end', zIndex: 50 }}
           onClick={() => setFeedbackMode(null)}
         >
           <div
-            className="bg-white rounded-t-3xl p-6 w-full max-w-lg mx-auto space-y-4"
+            style={{ backgroundColor: '#fff', borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '430px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}
             onClick={e => e.stopPropagation()}
           >
-            <h3 className="font-bold text-gray-800 text-lg">料理しました！フィードバック</h3>
+            <h3 style={{ fontWeight: 700, color: '#2F2F3A', fontSize: '18px', margin: 0 }}>料理しました！フィードバック</h3>
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">量はどうでしたか？</p>
-              <div className="flex flex-wrap gap-2">
+              <p style={{ fontSize: '14px', fontWeight: 600, color: '#2F2F3A', marginBottom: '8px' }}>量はどうでしたか？</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {portionFeedbackOptions.map(opt => (
                   <button
                     key={opt.value}
                     onClick={() => setPortionFeedback(opt.value)}
-                    className="text-xs px-3 py-2 rounded-xl border font-medium"
-                    style={portionFeedback === opt.value
-                      ? { backgroundColor: '#F97316', color: '#fff', borderColor: 'transparent' }
-                      : { backgroundColor: '#F9FAFB', borderColor: '#E5E7EB', color: '#374151' }
-                    }
+                    style={{
+                      fontSize: '13px',
+                      padding: '8px 14px',
+                      borderRadius: '12px',
+                      border: '1.5px solid',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      backgroundColor: portionFeedback === opt.value ? '#F48A7A' : '#fff',
+                      borderColor:     portionFeedback === opt.value ? '#F48A7A' : '#EDD5C8',
+                      color:           portionFeedback === opt.value ? '#fff' : '#5A4A44',
+                    }}
+                    className="active:scale-95"
                   >
                     {opt.label}
                   </button>
@@ -250,33 +319,45 @@ export default function RecipesPage({ recipes, shopping, stock }: Props) {
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">味はどうでしたか？</p>
-              <div className="flex flex-wrap gap-2">
+              <p style={{ fontSize: '14px', fontWeight: 600, color: '#2F2F3A', marginBottom: '8px' }}>味はどうでしたか？</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {tasteFeedbackOptions.map(opt => (
                   <button
                     key={opt.value}
                     onClick={() => setTasteFeedback(opt.value)}
-                    className="text-xs px-3 py-2 rounded-xl border font-medium"
-                    style={tasteFeedback === opt.value
-                      ? { backgroundColor: '#60A5FA', color: '#fff', borderColor: 'transparent' }
-                      : { backgroundColor: '#F9FAFB', borderColor: '#E5E7EB', color: '#374151' }
-                    }
+                    style={{
+                      fontSize: '13px',
+                      padding: '8px 14px',
+                      borderRadius: '12px',
+                      border: '1.5px solid',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      backgroundColor: tasteFeedback === opt.value ? '#A8CFF0' : '#fff',
+                      borderColor:     tasteFeedback === opt.value ? '#A8CFF0' : '#EDD5C8',
+                      color:           tasteFeedback === opt.value ? '#1A507A' : '#5A4A44',
+                    }}
+                    className="active:scale-95"
                   >
                     {opt.label}
                   </button>
                 ))}
               </div>
             </div>
-            <div className="flex gap-2 pt-2">
+            <div style={{ display: 'flex', gap: '10px', paddingTop: '4px' }}>
               <button
                 onClick={() => handleSubmitFeedback(feedbackMode)}
-                className="flex-1 py-3 rounded-xl text-white font-bold"
-                style={{ backgroundColor: '#F97316' }}
-              >送信する</button>
+                style={{ flex: 1, minHeight: '48px', backgroundColor: '#F48A7A', color: '#fff', borderRadius: '14px', fontWeight: 700, fontSize: '15px', border: 'none', cursor: 'pointer' }}
+                className="active:scale-95"
+              >
+                送信する
+              </button>
               <button
                 onClick={() => setFeedbackMode(null)}
-                className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-medium"
-              >スキップ</button>
+                style={{ flex: 1, minHeight: '48px', backgroundColor: '#F0E8E4', color: '#8C7068', borderRadius: '14px', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer' }}
+                className="active:scale-95"
+              >
+                スキップ
+              </button>
             </div>
           </div>
         </div>
@@ -284,20 +365,20 @@ export default function RecipesPage({ recipes, shopping, stock }: Props) {
 
       {/* レシピ一覧 */}
       {displayMatches.length === 0 ? (
-        <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
-          <p className="text-2xl mb-2">🤔</p>
-          <p className="text-gray-500 text-sm">
+        <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '32px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', textAlign: 'center' }}>
+          <p style={{ fontSize: '28px', marginBottom: '8px' }}>🤔</p>
+          <p style={{ color: '#A09890', fontSize: '14px' }}>
             {activeTab === 'can_cook' && '今すぐ作れるレシピがありません'}
             {activeTab === 'one_more' && 'あと1品で作れるレシピがありません'}
             {activeTab === 'two_more' && 'あと2品で作れるレシピがありません'}
-            {activeTab === 'savings' && '節約メニューがありません'}
+            {activeTab === 'savings'  && '節約メニューがありません'}
           </p>
           {activeTab === 'can_cook' && (
-            <p className="text-xs text-gray-400 mt-1">在庫を増やすと提案が増えます</p>
+            <p style={{ fontSize: '12px', color: '#C0A898', marginTop: '4px' }}>在庫を増やすと提案が増えます</p>
           )}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {displayMatches.map(match => (
             <RecipeCard
               key={match.recipe.id}
