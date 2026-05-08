@@ -17,6 +17,9 @@ export function useRecipes(stock: StockItem[], budgetRemaining: number) {
   const twoMissing = allMatches.filter(m => m.status === 'two_more');
   const savingsMenu = allMatches.filter(m => m.recipe.isSavingsMenu && m.status !== 'not_enough');
 
+  /** 自分の家用データへ切り替え時にフィードバック履歴を初期化 */
+  const clearFeedbacks = () => setFeedbacks([]);
+
   const addFeedback = (
     recipeId: string,
     portionFeedback: PortionFeedback,
@@ -40,6 +43,7 @@ export function useRecipes(stock: StockItem[], budgetRemaining: number) {
     savingsMenu,
     feedbacks,
     addFeedback,
+    clearFeedbacks,
     recipes: recipeData,
   };
 }

@@ -3,6 +3,10 @@ import type { UseShoppingListReturn } from '../hooks/useShoppingList';
 import type { UseStockReturn } from '../hooks/useStock';
 import type { ShoppingItem, ItemCategory } from '../types';
 import ItemQuickAddGrid from '../components/ItemQuickAddGrid';
+import { useFamilySettings } from '../hooks/useFamilySettings';
+import { quickAddCategories } from '../data/quickAddCategories';
+
+const ALL_QUICK_ITEMS = quickAddCategories.flatMap(cat => cat.items);
 
 interface Props {
   shopping: UseShoppingListReturn;
@@ -24,6 +28,10 @@ export default function ShoppingPage({ shopping, stock }: Props) {
   const [showManual, setShowManual] = useState(false);
   const [manual, setManual] = useState({ name: '', emoji: '🛒', category: 'food' as ItemCategory });
   const [toast, setToast] = useState<string | null>(null);
+  const { settings } = useFamilySettings();
+  const pinnedItems = ALL_QUICK_ITEMS.filter(item =>
+    (settings.frequentItems ?? []).includes(item.masterItemId)
+  );
 
   const showToast = (name: string) => {
     setToast(name);
@@ -89,6 +97,44 @@ export default function ShoppingPage({ shopping, stock }: Props) {
           padding: '16px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
         }}>
+          {pinnedItems.length > 0 && (
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#A09890', marginBottom: '8px' }}>⭐ よく買うもの</p>
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {pinnedItems.map(item => {
+                  const inList = shopping.isAlreadyInList(item.masterItemId);
+                  return (
+                    <button
+                      key={item.masterItemId}
+                      onClick={() => {
+                        const added = shopping.addByMasterItemId(item.masterItemId);
+                        if (added) showToast(item.name);
+                      }}
+                      disabled={inList}
+                      style={{
+                        flexShrink: 0,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                        padding: '10px 12px',
+                        borderRadius: '14px',
+                        border: inList ? '2px solid #A9DCC4' : '2px solid transparent',
+                        backgroundColor: inList ? '#E8F8F0' : '#FFFAF7',
+                        cursor: inList ? 'default' : 'pointer',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                        minWidth: '64px',
+                      }}
+                      className={inList ? '' : 'active:scale-95'}
+                    >
+                      <span style={{ fontSize: '26px', lineHeight: 1 }}>{item.emoji}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: inList ? '#1A8A56' : '#2F2F3A', textAlign: 'center', lineHeight: 1.2 }}>
+                        {item.name}
+                      </span>
+                      {inList && <span style={{ fontSize: '10px', color: '#1A8A56', fontWeight: 700 }}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <ItemQuickAddGrid shopping={shopping} onAdded={showToast} />
         </div>
       </div>

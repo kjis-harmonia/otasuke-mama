@@ -51,6 +51,9 @@ export function useBudget() {
     setWeeklyBudget(prev => ({ ...prev, amount }));
   };
 
+  /** 自分の家用データへ切り替え時に支出履歴を初期化 */
+  const clearEntries = () => setEntries([]);
+
   return {
     entries,
     weeklyBudget,
@@ -62,6 +65,7 @@ export function useBudget() {
     addEntry,
     deleteEntry,
     updateBudget,
+    clearEntries,
   };
 }
 

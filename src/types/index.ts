@@ -4,6 +4,7 @@ export type ItemCategory = 'food' | 'daily' | 'baby';
 export type ExpenseCategory = '食費' | '日用品' | '子ども用品' | '外食' | 'その他';
 export type EatingTendency = '少なめ' | 'ふつう' | 'よく食べる' | '肉多め' | '節約重視';
 export type TastePreference = '標準' | '甘め' | 'しっかり甘め' | 'あっさり' | '濃いめ' | '出汁強め';
+export type DataMode = 'demo' | 'real';
 export type PortionFeedback = 'just_right' | 'slightly_less' | 'much_less' | 'slightly_more' | 'much_more';
 export type TasteFeedback = 'just_right' | 'slightly_bland' | 'slightly_salty' | 'sweeter' | 'too_sweet';
 export type RecipeMatchStatus = 'can_cook' | 'one_more' | 'two_more' | 'not_enough';
@@ -139,6 +140,13 @@ export interface FamilySettings {
   toddlers: number;
   eatingTendency: EatingTendency;
   tastePreference: TastePreference;
+  frequentItems?: string[]; // よく買うもの（masterItemIds）
+}
+
+// ─── セットアップ ──────────────────────────────────────────
+export interface SetupState {
+  isComplete: boolean;
+  dataMode: DataMode;
 }
 
 export interface WeeklyBudget {

@@ -56,6 +56,9 @@ export function useShoppingList() {
     setList(prev => prev.filter(i => !i.checked));
   };
 
+  /** 自分の家用データへ切り替え時にリスト全件削除 */
+  const clearAll = () => setList([]);
+
   const uncheckedItems = list.filter(i => !i.checked);
   const checkedItems = list.filter(i => i.checked);
 
@@ -69,6 +72,7 @@ export function useShoppingList() {
     toggle,
     remove,
     clearChecked,
+    clearAll,
   };
 }
 

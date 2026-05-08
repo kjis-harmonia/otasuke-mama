@@ -88,6 +88,12 @@ export function useStock() {
     setFrozenItems(prev => prev.filter(i => i.id !== id));
   };
 
+  /** 自分の家用データへ切り替え時に在庫・冷凍を初期化 */
+  const clearUserData = () => {
+    setStock([]);
+    setFrozenItems([]);
+  };
+
   return {
     stock,
     frozenItems,
@@ -99,6 +105,7 @@ export function useStock() {
     addFrozenItem,
     updateFrozenQuantity,
     deleteFrozenItem,
+    clearUserData,
   };
 }
 
