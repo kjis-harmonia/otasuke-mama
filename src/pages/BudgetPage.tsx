@@ -67,7 +67,7 @@ export default function BudgetPage({ budget }: Props) {
   const [formCategory, setFormCategory] = useState<ExpenseCategory>('食費');
   const [formMemo, setFormMemo] = useState('');
 
-  const { entries, weeklyBudget, weekTotal, remaining, daysLeft, dailyBudget, categoryTotals, addEntry, deleteEntry, updateBudget } = budget;
+  const { entries, weeklyBudget, weekTotal, remaining, daysLeft, dailyBudget, projectedSavings, weekRangeLabel, categoryTotals, addEntry, deleteEntry, updateBudget } = budget;
 
   const isOver = remaining < 0;
   const usagePercent = Math.min(100, Math.round((weekTotal / weeklyBudget.amount) * 100));
@@ -107,7 +107,10 @@ export default function BudgetPage({ budget }: Props) {
         style={{ background: isOver ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'linear-gradient(135deg, #FFB38A 0%, #F97316 100%)' }}
       >
         <div className="flex items-center justify-between mb-1">
-          <p className="text-sm font-medium opacity-90">今週の食費</p>
+          <div>
+            <p className="text-sm font-medium opacity-90">今週の食費</p>
+            <p style={{ fontSize: '11px', opacity: 0.75, margin: '1px 0 0' }}>{weekRangeLabel}</p>
+          </div>
           <span
             className="text-xs px-2 py-0.5 rounded-full font-bold"
             style={{ backgroundColor: isOver ? 'rgba(153,27,27,0.4)' : 'rgba(255,255,255,0.3)', color: '#fff' }}
@@ -139,6 +142,32 @@ export default function BudgetPage({ budget }: Props) {
           )}
         </div>
       </div>
+
+      {/* 節約メッセージ */}
+      {!isOver && projectedSavings > 0 && (
+        <div style={{
+          backgroundColor: '#E8F8F0',
+          borderRadius: '16px',
+          padding: '14px 16px',
+          border: '1.5px solid #A9DCC4',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+        }}>
+          <span style={{ fontSize: '26px' }}>🎉</span>
+          <div>
+            <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A7A46', margin: 0 }}>
+              {daysLeft > 0 ? '節約ペースです！' : '今週お疲れさまでした！'}
+            </p>
+            <p style={{ fontSize: '12px', color: '#2D8A5A', marginTop: '2px' }}>
+              {daysLeft > 0
+                ? <>このペースで <strong>¥{projectedSavings.toLocaleString()}</strong> 節約できそうです</>
+                : <>今週は <strong>¥{projectedSavings.toLocaleString()}</strong> 節約できました！</>
+              }
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 予算設定 */}
       <Card>

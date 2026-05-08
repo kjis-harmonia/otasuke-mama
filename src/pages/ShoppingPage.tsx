@@ -85,7 +85,7 @@ export default function ShoppingPage({ shopping, stock }: Props) {
           padding: '12px 16px 10px',
         }}>
           <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '16px', margin: 0 }}>
-            📸 よく買うものをタップで追加
+            よく買うものをタップで追加
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', margin: '2px 0 0' }}>
             文字を打たずにポンポン追加できます

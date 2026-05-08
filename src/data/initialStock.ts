@@ -5,9 +5,9 @@ export const initialStock: StockItem[] = [
   { id: 's0',  masterItemId: 'cooked_rice',   name: 'ご飯',              emoji: '🍚', category: 'food',  subCategory: '主食',   quantity: 3,  unit: '杯分',  stockStatus: 'enough', location: '常温', memo: '', lastUpdatedAt: '2026-05-07' },
   // ─── 食品・乳卵 ───────────────────────────────────
   { id: 's1',  masterItemId: 'egg',           name: '卵',                emoji: '🥚', category: 'food',  subCategory: '乳卵',   quantity: 6,  unit: '個',    stockStatus: 'enough', location: '冷蔵', memo: '', lastUpdatedAt: '2026-05-07' },
-  { id: 's2',  masterItemId: 'milk',          name: '牛乳',              emoji: '🥛', category: 'food',  subCategory: '乳卵',   quantity: 1,  unit: '本',    stockStatus: 'low',    location: '冷蔵', memo: '', lastUpdatedAt: '2026-05-06' },
-  { id: 's3',  masterItemId: 'tofu',          name: '豆腐',              emoji: '🫘', category: 'food',  subCategory: '豆類',   quantity: 1,  unit: '個',    stockStatus: 'enough', location: '冷蔵', memo: '', lastUpdatedAt: '2026-05-07' },
-  { id: 's4',  masterItemId: 'natto',         name: '納豆',              emoji: '🫘', category: 'food',  subCategory: '豆類',   quantity: 3,  unit: 'パック', stockStatus: 'enough', location: '冷蔵', memo: '', lastUpdatedAt: '2026-05-05' },
+  { id: 's2',  masterItemId: 'milk',          name: '牛乳',              emoji: '🥛', category: 'food',  subCategory: '乳卵',   quantity: 1,  unit: '本',    stockStatus: 'low',    location: '冷蔵', memo: '', lastUpdatedAt: '2026-05-06', expiryDate: '2026-05-08', expiryType: '賞味期限' },
+  { id: 's3',  masterItemId: 'tofu',          name: '豆腐',              emoji: '🫘', category: 'food',  subCategory: '豆類',   quantity: 1,  unit: '個',    stockStatus: 'enough', location: '冷蔵', memo: '', lastUpdatedAt: '2026-05-07', expiryDate: '2026-05-07', expiryType: '消費期限' },
+  { id: 's4',  masterItemId: 'natto',         name: '納豆',              emoji: '🫘', category: 'food',  subCategory: '豆類',   quantity: 3,  unit: 'パック', stockStatus: 'enough', location: '冷蔵', memo: '', lastUpdatedAt: '2026-05-05', expiryDate: '2026-05-09', expiryType: '賞味期限' },
   { id: 's5',  masterItemId: 'yogurt',        name: 'ヨーグルト',        emoji: '🥣', category: 'food',  subCategory: '乳卵',   quantity: 2,  unit: '個',    stockStatus: 'enough', location: '冷蔵', memo: '', lastUpdatedAt: '2026-05-04' },
   // ─── 食品・野菜 ───────────────────────────────────
   { id: 's6',  masterItemId: 'onion',         name: '玉ねぎ',            emoji: '🧅', category: 'food',  subCategory: '野菜',   quantity: 3,  unit: '個',    stockStatus: 'enough', location: '常温', memo: '', lastUpdatedAt: '2026-05-03' },
@@ -16,7 +16,7 @@ export const initialStock: StockItem[] = [
   { id: 's11', masterItemId: 'bread',         name: '食パン',            emoji: '🍞', category: 'food',  subCategory: 'パン',   quantity: 1,  unit: '袋',    stockStatus: 'enough', location: '常温', memo: '', lastUpdatedAt: '2026-05-07' },
   { id: 's12', masterItemId: 'banana',        name: 'バナナ',            emoji: '🍌', category: 'food',  subCategory: '果物',   quantity: 5,  unit: '本',    stockStatus: 'enough', location: '常温', memo: '', lastUpdatedAt: '2026-05-06' },
   // ─── 食品・肉類 ───────────────────────────────────
-  { id: 's9',  masterItemId: 'chicken_thigh', name: '鶏もも肉',          emoji: '🍗', category: 'food',  subCategory: '肉類',   quantity: 2,  unit: '枚',    stockStatus: 'enough', location: '冷蔵', memo: '', lastUpdatedAt: '2026-05-07' },
+  { id: 's9',  masterItemId: 'chicken_thigh', name: '鶏もも肉',          emoji: '🍗', category: 'food',  subCategory: '肉類',   quantity: 2,  unit: '枚',    stockStatus: 'enough', location: '冷蔵', memo: '', lastUpdatedAt: '2026-05-07', expiryDate: '2026-05-08', expiryType: '消費期限' },
   { id: 's10', masterItemId: 'pork_cut',      name: '豚こま',            emoji: '🥩', category: 'food',  subCategory: '肉類',   quantity: 1,  unit: 'パック', stockStatus: 'low',    location: '冷凍', memo: '', lastUpdatedAt: '2026-05-06' },
   // ─── 食品・調味料 ─────────────────────────────────
   { id: 's13', masterItemId: 'soy_sauce',     name: 'しょうゆ',          emoji: '🫙', category: 'food',  subCategory: '調味料', quantity: 1,  unit: '本',    stockStatus: 'low',    location: '常温', memo: '', lastUpdatedAt: '2026-04-20' },

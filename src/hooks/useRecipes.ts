@@ -2,6 +2,7 @@ import { useLocalStorage } from './useLocalStorage';
 import type { RecipeFeedback, PortionFeedback, TasteFeedback, StockItem } from '../types';
 import { recipeData } from '../data/recipeData';
 import { matchAllRecipes, sortRecipeMatches } from '../utils/recipeMatcher';
+import { useCustomRecipes } from './useCustomRecipes';
 
 const FEEDBACK_KEY = 'otasuke_feedback_v2';
 
@@ -9,15 +10,16 @@ const genId = () => Math.random().toString(36).slice(2, 11);
 
 export function useRecipes(stock: StockItem[], budgetRemaining: number) {
   const [feedbacks, setFeedbacks] = useLocalStorage<RecipeFeedback[]>(FEEDBACK_KEY, []);
+  const { customRecipes, addCustomRecipe, updateCustomRecipe, deleteCustomRecipe } = useCustomRecipes();
 
-  const allMatches = sortRecipeMatches(matchAllRecipes(recipeData, stock), budgetRemaining);
+  const allRecipes = [...recipeData, ...customRecipes];
+  const allMatches = sortRecipeMatches(matchAllRecipes(allRecipes, stock), budgetRemaining);
 
-  const canCook = allMatches.filter(m => m.status === 'can_cook');
+  const canCook    = allMatches.filter(m => m.status === 'can_cook');
   const oneMissing = allMatches.filter(m => m.status === 'one_more');
   const twoMissing = allMatches.filter(m => m.status === 'two_more');
   const savingsMenu = allMatches.filter(m => m.recipe.isSavingsMenu && m.status !== 'not_enough');
 
-  /** 自分の家用データへ切り替え時にフィードバック履歴を初期化 */
   const clearFeedbacks = () => setFeedbacks([]);
 
   const addFeedback = (
@@ -44,7 +46,11 @@ export function useRecipes(stock: StockItem[], budgetRemaining: number) {
     feedbacks,
     addFeedback,
     clearFeedbacks,
-    recipes: recipeData,
+    recipes: allRecipes,
+    customRecipes,
+    addCustomRecipe,
+    updateCustomRecipe,
+    deleteCustomRecipe,
   };
 }
 

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { UseBudgetReturn } from '../hooks/useBudget';
 import { useFamilySettings } from '../hooks/useFamilySettings';
+import { useHiddenItems } from '../hooks/useHiddenItems';
+import { masterItems } from '../data/masterItems';
 import type { EatingTendency, TastePreference } from '../types';
 import Card from '../components/Card';
 import GuideModal from '../components/GuideModal';
@@ -56,6 +58,7 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
   const [showGuide, setShowGuide] = useState(false);
   const [budgetInput, setBudgetInput] = useState('');
   const { settings: familySettings, updateSettings: updateFamily } = useFamilySettings();
+  const { hidden, restoreItem, restoreAll } = useHiddenItems();
 
   const handleCountChange = (field: 'adults' | 'children' | 'toddlers', delta: number) => {
     const current = familySettings[field];
@@ -234,6 +237,48 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
         >
           📖 使い方ガイドを見る
         </button>
+      </Card>
+
+      {/* 非表示アイテムの管理 */}
+      <Card>
+        <h2 className="font-bold text-gray-800 text-base mb-3">👁️ 非表示アイテムの管理</h2>
+        {hidden.length === 0 ? (
+          <p className="text-sm text-gray-400">非表示にしているアイテムはありません</p>
+        ) : (
+          <>
+            <p className="text-xs text-gray-400 mb-3">買い物グリッドで非表示にしたアイテムを元に戻せます</p>
+            <div className="space-y-2">
+              {hidden.map(id => {
+                const item = masterItems.find(m => m.id === id);
+                if (!item) return null;
+                return (
+                  <div key={id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{item.emoji}</span>
+                      <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                    </div>
+                    <button
+                      onClick={() => restoreItem(id)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                      style={{ backgroundColor: '#E8F8F0', color: '#1A8A56' }}
+                    >
+                      表示に戻す
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            {hidden.length >= 2 && (
+              <button
+                onClick={restoreAll}
+                className="w-full mt-3 py-2 rounded-xl text-sm font-medium"
+                style={{ backgroundColor: '#F0E8E4', color: '#8C7068' }}
+              >
+                すべて表示に戻す
+              </button>
+            )}
+          </>
+        )}
       </Card>
 
       {/* データの管理 */}

@@ -5,6 +5,7 @@ import type { UseBudgetReturn } from '../hooks/useBudget';
 import type { UseRecipesReturn } from '../hooks/useRecipes';
 import Card from '../components/Card';
 import PrimaryButton from '../components/PrimaryButton';
+import { getExpiryInfo, isAlertExpiry } from '../utils/expiryUtils';
 
 interface Props {
   stock: UseStockReturn;
@@ -12,6 +13,7 @@ interface Props {
   budget: UseBudgetReturn;
   recipes: UseRecipesReturn;
   onTabChange: (tab: TabName) => void;
+  onNavigateToExpiryRecipes: () => void;
 }
 
 // ──────────────── 次アクションカード ──────────────────────────
@@ -93,12 +95,17 @@ function NextActionSection({
 
 // ──────────────── メインコンポーネント ────────────────────────
 
-export default function HomePage({ stock, shopping, budget, recipes, onTabChange }: Props) {
+export default function HomePage({ stock, shopping, budget, recipes, onTabChange, onNavigateToExpiryRecipes }: Props) {
   const lowStock    = stock.stock.filter(s => s.stockStatus === 'low' || s.stockStatus === 'empty');
   const activeStock = stock.stock.filter(s => s.stockStatus !== 'empty');
   const unchecked   = shopping.uncheckedItems;
   const canCookCount = recipes.canCook.length;
   const todayMenus  = recipes.canCook.slice(0, 3);
+
+  const expiringItems = stock.stock
+    .filter(item => item.category === 'food' && isAlertExpiry(getExpiryInfo(item.expiryDate).status))
+    .sort((a, b) => getExpiryInfo(a.expiryDate).daysUntil - getExpiryInfo(b.expiryDate).daysUntil)
+    .slice(0, 5);
 
   // ── 次アクションカードを条件ごとにビルド ──────────────────
   const actionCards: ActionCardData[] = [];
@@ -197,6 +204,11 @@ export default function HomePage({ stock, shopping, budget, recipes, onTabChange
           ) : (
             <p className="text-sm">今週の集計が終わりました</p>
           )}
+          {budget.remaining > 0 && (
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.9)', marginTop: '5px' }}>
+              🎉 節約ペース！あと ¥{budget.remaining.toLocaleString()} 余裕あり
+            </p>
+          )}
         </div>
       </div>
 
@@ -222,6 +234,52 @@ export default function HomePage({ stock, shopping, budget, recipes, onTabChange
           <span className="text-xs text-gray-500 text-center mt-0.5">作れるメニュー</span>
         </button>
       </div>
+
+      {/* 期限が近いもの */}
+      <Card>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-bold text-gray-800">⏰ 期限が近いもの</h2>
+          {expiringItems.length > 0 && (
+            <button
+              onClick={() => onTabChange('inventory')}
+              className="text-xs font-medium"
+              style={{ color: '#F48A7A' }}
+            >
+              在庫で確認 →
+            </button>
+          )}
+        </div>
+        {expiringItems.length === 0 ? (
+          <p className="text-sm text-gray-400 py-1">期限が近い食材はありません</p>
+        ) : (
+          <>
+            <div className="space-y-1.5 mb-3">
+              {expiringItems.map(item => {
+                const exp = getExpiryInfo(item.expiryDate);
+                return (
+                  <div key={item.id} className="flex items-center gap-2">
+                    <span className="text-base">{item.emoji}</span>
+                    <span className="text-sm text-gray-700 flex-1">{item.name}</span>
+                    <span
+                      className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: exp.badgeBg, color: exp.badgeText }}
+                    >
+                      {exp.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              onClick={onNavigateToExpiryRecipes}
+              className="w-full py-2.5 rounded-xl text-sm font-bold"
+              style={{ backgroundColor: '#FFF3EE', color: '#B85A28' }}
+            >
+              使い切りメニューを見る →
+            </button>
+          </>
+        )}
+      </Card>
 
       {/* ✨ 次アクションカード */}
       <NextActionSection cards={displayCards} />
@@ -273,9 +331,6 @@ export default function HomePage({ stock, shopping, budget, recipes, onTabChange
       <div className="space-y-3">
         <PrimaryButton size="lg" className="w-full" onClick={() => onTabChange('shopping')}>
           🛒 買い物リストを見る（{unchecked.length}件）
-        </PrimaryButton>
-        <PrimaryButton size="lg" variant="blue" className="w-full" onClick={() => onTabChange('shopping')}>
-          📸 写真タップで追加する
         </PrimaryButton>
       </div>
 

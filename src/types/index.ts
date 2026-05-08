@@ -5,6 +5,7 @@ export type ExpenseCategory = '食費' | '日用品' | '子ども用品' | '外�
 export type EatingTendency = '少なめ' | 'ふつう' | 'よく食べる' | '肉多め' | '節約重視';
 export type TastePreference = '標準' | '甘め' | 'しっかり甘め' | 'あっさり' | '濃いめ' | '出汁強め';
 export type DataMode = 'demo' | 'real';
+export type ExpiryType = '賞味期限' | '消費期限' | 'なし';
 export type PortionFeedback = 'just_right' | 'slightly_less' | 'much_less' | 'slightly_more' | 'much_more';
 export type TasteFeedback = 'just_right' | 'slightly_bland' | 'slightly_salty' | 'sweeter' | 'too_sweet';
 export type RecipeMatchStatus = 'can_cook' | 'one_more' | 'two_more' | 'not_enough';
@@ -36,7 +37,10 @@ export interface StockItem {
   location: Location;
   memo: string;
   lastUpdatedAt: string;
-  brandName?: string; // ブランド名（任意）
+  brandName?: string;
+  expiryDate?: string;          // 'YYYY-MM-DD'
+  expiryType?: ExpiryType;      // default '賞味期限'
+  alertDaysBefore?: number;     // default 3
 }
 
 // ─── 冷凍・作り置き ────────────────────────────────────────
@@ -82,9 +86,23 @@ export interface BudgetEntry {
  * 例: { label: 'ご飯', itemIds: ['cooked_rice', 'frozen_rice', 'rice'] }
  */
 export interface RequiredGroup {
-  label: string;     // 表示ラベル（'ご飯'、'肉' など）
-  emoji: string;     // グループの絵文字
-  itemIds: string[]; // いずれか1つが在庫にあれば満たされる
+  label: string;
+  emoji: string;
+  itemIds: string[];
+}
+
+export interface CustomIngredient {
+  masterItemId?: string;
+  name: string;
+  amountLabel: string;
+  fractionValue?: number;
+  unit: string;
+  required: boolean;
+}
+
+export interface CustomSeasoning {
+  name: string;
+  amountLabel: string;
 }
 
 export interface Recipe {
@@ -92,17 +110,22 @@ export interface Recipe {
   name: string;
   emoji: string;
   tags: string[];
-  requiredItemIds: string[];       // 全て必要（AND条件）
-  requiredGroups?: RequiredGroup[]; // グループ内でいずれか1つ（OR条件）
+  requiredItemIds: string[];
+  requiredGroups?: RequiredGroup[];
   optionalItemIds: string[];
   category: string;
-  difficulty: '簡単' | '普通' | 'やや難';
+  difficulty: '簡単' | '普通' | 'やや難' | '少し手間';
   timeMinutes: number;
   portionNote: string;
   ingredientsSimple: string;
   seasoningSimple: string;
   tips: string;
   isSavingsMenu: boolean;
+  isCustomRecipe?: boolean;
+  ingredients?: CustomIngredient[];
+  seasonings?: CustomSeasoning[];
+  familyMemo?: string;
+  stepsMemo?: string;
 }
 
 // ─── レシピ照合 ────────────────────────────────────────────

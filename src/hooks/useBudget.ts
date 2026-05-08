@@ -2,12 +2,12 @@ import { useLocalStorage } from './useLocalStorage';
 import type { BudgetEntry, WeeklyBudget } from '../types';
 import {
   calcWeekTotal,
-  calcRemainingBudget,
   calcDaysLeftInWeek,
   calcDailyBudget,
   getCategoryTotal,
 } from '../utils/budgetCalculator';
 import { getTodayDate } from '../utils/dateUtils';
+import { getCurrentWeekStart, formatWeekRange } from '../utils/weekUtils';
 
 const BUDGET_KEY = 'otasuke_budget_v2';
 const WEEKLY_KEY = 'otasuke_weekly_v2';
@@ -33,11 +33,21 @@ export function useBudget() {
   const [entries, setEntries] = useLocalStorage<BudgetEntry[]>(BUDGET_KEY, initialEntries);
   const [weeklyBudget, setWeeklyBudget] = useLocalStorage<WeeklyBudget>(WEEKLY_KEY, initialWeeklyBudget);
 
-  const weekTotal = calcWeekTotal(entries, weeklyBudget.weekStartDate);
-  const remaining = calcRemainingBudget(weeklyBudget, entries);
-  const daysLeft = calcDaysLeftInWeek(weeklyBudget.weekStartDate, getTodayDate());
+  // 月曜日起算で今週の集計期間を自動計算
+  const weekStart = getCurrentWeekStart();
+  const weekTotal = calcWeekTotal(entries, weekStart);
+  const remaining = weeklyBudget.amount - weekTotal;
+  const daysLeft = calcDaysLeftInWeek(weekStart, getTodayDate());
   const dailyBudget = calcDailyBudget(remaining, daysLeft);
-  const categoryTotals = getCategoryTotal(entries, weeklyBudget.weekStartDate);
+  const categoryTotals = getCategoryTotal(entries, weekStart);
+  const weekRangeLabel = formatWeekRange();
+
+  // 節約ペース計算
+  const daysElapsed = Math.max(1, 7 - daysLeft);
+  const projectedTotal = (daysLeft > 0 && weekTotal > 0)
+    ? Math.round((weekTotal / daysElapsed) * 7)
+    : weekTotal;
+  const projectedSavings = weeklyBudget.amount - projectedTotal;
 
   const addEntry = (entry: Omit<BudgetEntry, 'id'>) => {
     setEntries(prev => [{ ...entry, id: genId() }, ...prev]);
@@ -57,10 +67,13 @@ export function useBudget() {
   return {
     entries,
     weeklyBudget,
+    weekStart,
+    weekRangeLabel,
     weekTotal,
     remaining,
     daysLeft,
     dailyBudget,
+    projectedSavings,
     categoryTotals,
     addEntry,
     deleteEntry,

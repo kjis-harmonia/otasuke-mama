@@ -65,6 +65,10 @@ export function useStock() {
     setStock(prev => prev.filter(i => i.id !== id));
   };
 
+  const updateStockItem = (id: string, updates: Partial<StockItem>) => {
+    setStock(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+  };
+
   const decrementByMasterItemId = (masterItemId: string, amount = 1) => {
     const item = stock.find(s => s.masterItemId === masterItemId);
     if (item && item.category === 'food') {
@@ -101,6 +105,7 @@ export function useStock() {
     setStatus,
     addStockItem,
     deleteStockItem,
+    updateStockItem,
     decrementByMasterItemId,
     addFrozenItem,
     updateFrozenQuantity,

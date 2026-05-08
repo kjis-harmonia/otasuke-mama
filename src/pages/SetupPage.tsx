@@ -42,13 +42,16 @@ function ProgressDots({ step }: { step: number }) {
 }
 
 function CounterRow({
-  emoji, label, value, onDec, onInc,
-}: { emoji: string; label: string; value: number; onDec: () => void; onInc: () => void }) {
+  emoji, label, sub, value, onDec, onInc,
+}: { emoji: string; label: string; sub?: string; value: number; onDec: () => void; onInc: () => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span style={{ fontSize: '22px' }}>{emoji}</span>
-        <span style={{ fontSize: '15px', fontWeight: 500, color: '#2F2F3A' }}>{label}</span>
+        <div>
+          <span style={{ fontSize: '15px', fontWeight: 500, color: '#2F2F3A' }}>{label}</span>
+          {sub && <p style={{ fontSize: '11px', color: '#A09890', margin: '1px 0 0' }}>{sub}</p>}
+        </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <button
@@ -205,7 +208,7 @@ export default function SetupPage({ onComplete, defaultBudget, onBudgetChange }:
                 onDec={() => updateSettings({ adults: Math.max(0, settings.adults - 1) })}
                 onInc={() => updateSettings({ adults: settings.adults + 1 })} />
               <div style={{ height: '1px', backgroundColor: '#F5EDE8' }} />
-              <CounterRow emoji="🧒" label="子ども（小学生以上）" value={settings.children}
+              <CounterRow emoji="🧒" label="子ども" sub="小学生以上" value={settings.children}
                 onDec={() => updateSettings({ children: Math.max(0, settings.children - 1) })}
                 onInc={() => updateSettings({ children: settings.children + 1 })} />
               <div style={{ height: '1px', backgroundColor: '#F5EDE8' }} />
@@ -226,7 +229,7 @@ export default function SetupPage({ onComplete, defaultBudget, onBudgetChange }:
           <div>
             <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#2F2F3A', marginBottom: '6px' }}>💰 週の食費予算</h2>
             <p style={{ fontSize: '13px', color: '#A09890', marginBottom: '24px' }}>
-              日用品・外食を含めても大丈夫です。あとで変更できます
+              まずは食費だけの目安でOKです。あとで変更できます。
             </p>
             {/* 現在の選択 */}
             <div style={{
@@ -392,10 +395,10 @@ export default function SetupPage({ onComplete, defaultBudget, onBudgetChange }:
                 <span style={{ fontSize: '36px' }}>🎮</span>
                 <div>
                   <p style={{ fontSize: '16px', fontWeight: 800, color: '#2F2F3A', marginBottom: '6px' }}>
-                    サンプルデータで試す
+                    まずアプリを試してみる
                   </p>
                   <p style={{ fontSize: '13px', color: '#7A6860', lineHeight: 1.6 }}>
-                    デモデータが入った状態でスタート。<br />使い方を確認してから始めたい方におすすめです。
+                    在庫・買い物・家計のサンプルデータ入りでスタート。<br />操作感を確かめてから本格利用に切り替えられます。
                   </p>
                   <div style={{ marginTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {['在庫データあり', '買い物リストあり', '家計サンプルあり'].map(tag => (
@@ -425,10 +428,10 @@ export default function SetupPage({ onComplete, defaultBudget, onBudgetChange }:
                   <span style={{ fontSize: '36px' }}>🏠</span>
                   <div>
                     <p style={{ fontSize: '16px', fontWeight: 800, color: '#2F2F3A', marginBottom: '6px' }}>
-                      自分の家用に始める
+                      今すぐ本格的に使いはじめる
                     </p>
                     <p style={{ fontSize: '13px', color: '#7A6860', lineHeight: 1.6 }}>
-                      在庫・買い物リスト・家計簿が空の状態でスタート。<br />今すぐ本格的に使いたい方向けです。
+                      データは空の状態でスタート。<br />自分の家の食材・買い物・家計を最初から登録していきます。
                     </p>
                     <div style={{ marginTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {['設定内容は保持', '在庫は空からスタート', '自分のペースで入力'].map(tag => (
