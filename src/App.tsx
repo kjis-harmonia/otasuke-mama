@@ -7,11 +7,13 @@ import BudgetPage from './pages/BudgetPage';
 import RecipesPage from './pages/RecipesPage';
 import SettingsPage from './pages/SettingsPage';
 import SetupPage from './pages/SetupPage';
+import GuideModal from './components/GuideModal';
 import { useStock } from './hooks/useStock';
 import { useShoppingList } from './hooks/useShoppingList';
 import { useBudget } from './hooks/useBudget';
 import { useRecipes } from './hooks/useRecipes';
 import { useSetup } from './hooks/useSetup';
+import { useGuide } from './hooks/useGuide';
 import type { DataMode } from './types';
 
 export type TabName = 'home' | 'inventory' | 'shopping' | 'budget' | 'recipes' | 'settings';
@@ -21,6 +23,7 @@ function App() {
   const [expiryTabTrigger, setExpiryTabTrigger] = useState(0);
 
   const setup       = useSetup();
+  const guide       = useGuide();
   const stockHook   = useStock();
   const shoppingHook = useShoppingList();
   const budgetHook  = useBudget();
@@ -99,6 +102,9 @@ function App() {
           {renderPage()}
         </main>
         <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+        {setup.isSetupComplete && !guide.isTourSeen && (
+          <GuideModal onClose={guide.markTourSeen} />
+        )}
       </div>
     </div>
   );

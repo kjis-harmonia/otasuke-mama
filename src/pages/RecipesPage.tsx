@@ -7,6 +7,8 @@ import { substitutions } from '../data/substitutions';
 import { formatFractionalQuantity } from '../data/quantityOptions';
 import CustomRecipeForm from '../components/CustomRecipeForm';
 import { getExpiryInfo, isAlertExpiry } from '../utils/expiryUtils';
+import MiniGuide from '../components/MiniGuide';
+import { isTabGuideSeen, markTabGuideSeen } from '../hooks/useGuide';
 
 interface Props {
   recipes: UseRecipesReturn;
@@ -239,6 +241,7 @@ function RecipeCard({ match, onCook, onDelete, onAddMissingToShopping }: {
 
 export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger }: Props) {
   const [activeTab, setActiveTab] = useState<RecipeTab>('can_cook');
+  const [showGuide, setShowGuide] = useState(() => !isTabGuideSeen('recipes'));
   const [feedbackMode, setFeedbackMode] = useState<string | null>(null);
   const [feedbackSummary, setFeedbackSummary] = useState<string>('');
   const [portionFeedback, setPortionFeedback] = useState<PortionFeedback>('just_right');
@@ -459,6 +462,16 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
             />
           ))}
         </div>
+      )}
+
+      {showGuide && (
+        <MiniGuide
+          emoji="🍳"
+          title="うちレシピタブへようこそ"
+          desc="在庫データをもとに「今すぐ作れる」料理を自動で提案します。使い切りメニューも見られます。"
+          tip="「作った！」をタップすると在庫が自動で減ります"
+          onClose={() => { markTabGuideSeen('recipes'); setShowGuide(false); }}
+        />
       )}
     </div>
   );

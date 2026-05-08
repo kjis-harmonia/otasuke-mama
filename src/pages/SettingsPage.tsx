@@ -3,6 +3,7 @@ import type { UseBudgetReturn } from '../hooks/useBudget';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { useHiddenItems } from '../hooks/useHiddenItems';
 import { useCustomItems } from '../hooks/useCustomItems';
+import { useGuide } from '../hooks/useGuide';
 import { masterItems } from '../data/masterItems';
 import type { EatingTendency, TastePreference } from '../types';
 import Card from '../components/Card';
@@ -61,6 +62,7 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
   const { settings: familySettings, updateSettings: updateFamily } = useFamilySettings();
   const { hidden, restoreItem, restoreAll } = useHiddenItems();
   const customItems = useCustomItems();
+  const guide = useGuide();
 
   const handleCountChange = (field: 'adults' | 'children' | 'toddlers', delta: number) => {
     const current = familySettings[field];
@@ -123,6 +125,30 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
             </p>
           </div>
         </div>
+      </Card>
+
+      {/* 使い方ガイド */}
+      <Card>
+        <h2 className="font-bold text-gray-800 text-base mb-3">📖 使い方ガイド</h2>
+        <div className="space-y-2">
+          <button
+            onClick={() => setShowGuide(true)}
+            className="w-full py-3 rounded-xl text-sm font-semibold"
+            style={{ backgroundColor: '#FFE3D5', color: '#B85A28' }}
+          >
+            全体ガイドをもう一度見る
+          </button>
+          <button
+            onClick={() => {
+              guide.resetTabGuides();
+            }}
+            className="w-full py-3 rounded-xl text-sm font-medium"
+            style={{ backgroundColor: '#F0E8E4', color: '#8C7068' }}
+          >
+            各タブのガイドをリセット
+          </button>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">各タブを初めて開いたときに表示されるガイドを再表示します</p>
       </Card>
 
       {/* 食べる量の傾向 */}
@@ -216,7 +242,7 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
         <div className="space-y-2 text-sm text-gray-500">
           <div className="flex items-center justify-between">
             <span>バージョン</span>
-            <span className="font-bold text-gray-700">v0.3.0</span>
+            <span className="font-bold text-gray-700">v0.5.0</span>
           </div>
           <div className="flex items-center justify-between">
             <span>データ保存先</span>

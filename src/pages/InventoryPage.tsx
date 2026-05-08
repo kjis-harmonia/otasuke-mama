@@ -4,6 +4,8 @@ import type { UseShoppingListReturn } from '../hooks/useShoppingList';
 import type { StockItem, StockStatus, FrozenItem, ExpiryType } from '../types';
 import { getExpiryInfo, isAlertExpiry } from '../utils/expiryUtils';
 import StatusBadge from '../components/StatusBadge';
+import MiniGuide from '../components/MiniGuide';
+import { isTabGuideSeen, markTabGuideSeen } from '../hooks/useGuide';
 
 type StockTab = 'food' | 'daily' | 'baby' | 'frozen';
 type SortOrder = 'default' | 'expiry' | 'quantity';
@@ -303,6 +305,7 @@ export default function InventoryPage({ stock, shopping }: Props) {
   const [tab, setTab]       = useState<StockTab>('food');
   const [sort, setSort]     = useState<SortOrder>('default');
   const [showAddFrozen, setShowAddFrozen] = useState(false);
+  const [showGuide, setShowGuide] = useState(() => !isTabGuideSeen('inventory'));
   const [newFrozen, setNewFrozen] = useState({ name: '', emoji: '🍱', quantity: 1, unit: '個', memo: '' });
 
   const foodItems  = stock.stock.filter(s => s.category === 'food');
@@ -434,6 +437,16 @@ export default function InventoryPage({ stock, shopping }: Props) {
           </>
         )}
       </div>
+
+      {showGuide && (
+        <MiniGuide
+          emoji="📦"
+          title="在庫タブへようこそ"
+          desc="食品・日用品・子ども用品の残量をここで管理できます。「追加」ボタンで在庫を登録しましょう。"
+          tip="数量の「+」「-」で残量をラクに更新できます"
+          onClose={() => { markTabGuideSeen('inventory'); setShowGuide(false); }}
+        />
+      )}
     </div>
   );
 }

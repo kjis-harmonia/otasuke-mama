@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { UseBudgetReturn } from '../hooks/useBudget';
 import type { BudgetEntry, ExpenseCategory } from '../types';
 import Card from '../components/Card';
+import MiniGuide from '../components/MiniGuide';
+import { isTabGuideSeen, markTabGuideSeen } from '../hooks/useGuide';
 
 interface Props {
   budget: UseBudgetReturn;
@@ -60,6 +62,7 @@ function EntryRow({ entry, onDelete }: { entry: BudgetEntry; onDelete: () => voi
 export default function BudgetPage({ budget }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showBudgetEdit, setShowBudgetEdit] = useState(false);
+  const [showGuide, setShowGuide] = useState(() => !isTabGuideSeen('budget'));
   const [newBudgetAmount, setNewBudgetAmount] = useState('');
   const [formDate, setFormDate] = useState('2026-05-07');
   const [formStore, setFormStore] = useState('');
@@ -362,6 +365,16 @@ export default function BudgetPage({ budget }: Props) {
           ))
         )}
       </div>
+
+      {showGuide && (
+        <MiniGuide
+          emoji="💰"
+          title="家計簿タブへようこそ"
+          desc="週の食費・日用品費をまとめて記録できます。残り予算と1日あたりの使える金額がひと目でわかります。"
+          tip="月曜スタートの週ごとに予算がリセットされます"
+          onClose={() => { markTabGuideSeen('budget'); setShowGuide(false); }}
+        />
+      )}
     </div>
   );
 }

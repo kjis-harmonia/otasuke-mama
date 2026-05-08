@@ -6,6 +6,8 @@ import ItemQuickAddGrid from '../components/ItemQuickAddGrid';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { quickAddCategories } from '../data/quickAddCategories';
 import { useCustomItems } from '../hooks/useCustomItems';
+import MiniGuide from '../components/MiniGuide';
+import { isTabGuideSeen, markTabGuideSeen } from '../hooks/useGuide';
 
 const ALL_QUICK_ITEMS = quickAddCategories.flatMap(cat => cat.items);
 
@@ -42,6 +44,7 @@ export default function ShoppingPage({ shopping, stock }: Props) {
     subCategory: SUB_CATEGORIES['food'][0],
   });
   const customItemsHook = useCustomItems();
+  const [showGuide, setShowGuide] = useState(() => !isTabGuideSeen('shopping'));
   const [toast, setToast] = useState<string | null>(null);
   const { settings } = useFamilySettings();
   const pinnedItems = ALL_QUICK_ITEMS.filter(item =>
@@ -402,6 +405,16 @@ export default function ShoppingPage({ shopping, stock }: Props) {
             </button>
           </div>
         </div>
+      )}
+
+      {showGuide && (
+        <MiniGuide
+          emoji="🛒"
+          title="買い物タブへようこそ"
+          desc="よく買うものをタップするだけでリストに追加できます。お店でチェックしながら使いましょう。"
+          tip="「わが家の商品」に登録すると毎回ラクに追加できます"
+          onClose={() => { markTabGuideSeen('shopping'); setShowGuide(false); }}
+        />
       )}
     </div>
   );
