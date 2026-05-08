@@ -13,6 +13,9 @@ export function useShoppingList() {
   const isAlreadyInList = (masterItemId: string) =>
     list.some(i => i.masterItemId === masterItemId && !i.checked);
 
+  const isAlreadyInListByName = (name: string) =>
+    list.some(i => i.name === name && !i.checked);
+
   const addByMasterItemId = (masterItemId: string) => {
     if (isAlreadyInList(masterItemId)) return false;
     const master = getMasterItem(masterItemId);
@@ -69,6 +72,7 @@ export function useShoppingList() {
     uncheckedItems,
     checkedItems,
     isAlreadyInList,
+    isAlreadyInListByName,
     addByMasterItemId,
     addByName,
     toggle,

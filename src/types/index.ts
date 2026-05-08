@@ -157,6 +157,17 @@ export interface RecipeFeedback {
   tasteFeedback: TasteFeedback;
 }
 
+// ─── カスタム商品 ─────────────────────────────────────
+export interface CustomItem {
+  id: string;
+  name: string;
+  emoji: string;
+  category: ItemCategory;
+  subCategory: string;
+  createdAt: string;
+  hidden?: boolean;
+}
+
 // ─── 設定 ─────────────────────────────────────────────────
 export interface FamilySettings {
   adults: number;

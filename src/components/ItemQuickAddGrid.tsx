@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { UseShoppingListReturn } from '../hooks/useShoppingList';
+import type { CustomItem, ItemCategory } from '../types';
 import { quickAddCategories } from '../data/quickAddCategories';
 import { useHiddenItems } from '../hooks/useHiddenItems';
 
@@ -8,12 +9,16 @@ const FOOD_SUB_CATS = [
   '葉もの', '実野菜', 'きのこ', '肉', '魚・海鮮', '果物', '調味料', '冷凍',
 ];
 
+const CATEGORY_KEYS: ItemCategory[] = ['food', 'daily', 'baby'];
+
 interface Props {
   shopping: UseShoppingListReturn;
   onAdded?: (name: string) => void;
+  customItems?: CustomItem[];
+  onHideCustom?: (id: string) => void;
 }
 
-export default function ItemQuickAddGrid({ shopping, onAdded }: Props) {
+export default function ItemQuickAddGrid({ shopping, onAdded, customItems = [], onHideCustom }: Props) {
   const [activeCat, setActiveCat] = useState(0);
   const [activeSubCat, setActiveSubCat] = useState('よく買う');
   const { hideItem, isHidden } = useHiddenItems();
@@ -31,6 +36,16 @@ export default function ItemQuickAddGrid({ shopping, onAdded }: Props) {
     if (!isFood) return true;
     if (activeSubCat === 'よく買う') return !!item.isFrequent;
     return item.subCategory === activeSubCat;
+  });
+
+  const currentCatKey = CATEGORY_KEYS[activeCat] ?? 'food';
+  const customForView = customItems.filter(item => {
+    if (item.category !== currentCatKey) return false;
+    if (currentCatKey === 'food') {
+      if (activeSubCat === 'よく買う') return false;
+      return item.subCategory === activeSubCat;
+    }
+    return true;
   });
 
   return (
@@ -95,96 +110,138 @@ export default function ItemQuickAddGrid({ shopping, onAdded }: Props) {
         </div>
       )}
 
-      {/* 3列グリッド */}
-      {visibleItems.length === 0 ? (
+      {/* 3列グリッド（定番商品） */}
+      {visibleItems.length === 0 && customForView.length === 0 ? (
         <p style={{ textAlign: 'center', fontSize: '13px', color: '#C0A898', padding: '20px 0' }}>
           このカテゴリにアイテムはありません
         </p>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '10px',
-        }}>
-          {visibleItems.map(item => {
-            const inList = shopping.isAlreadyInList(item.masterItemId);
-            return (
-              <div
-                key={item.masterItemId}
-                onClick={() => {
-                  if (inList) return;
-                  const added = shopping.addByMasterItemId(item.masterItemId);
-                  if (added && onAdded) onAdded(item.name);
-                }}
-                style={{
-                  position: 'relative',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '12px 8px 10px',
-                  borderRadius: '16px',
-                  border: inList ? '2px solid #A9DCC4' : '2px solid transparent',
-                  backgroundColor: inList ? '#E8F8F0' : '#FFFAF7',
-                  cursor: inList ? 'default' : 'pointer',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                  userSelect: 'none',
-                }}
-                className={inList ? '' : 'active:scale-95'}
-              >
-                {/* 非表示ボタン */}
-                {!inList && (
-                  <button
-                    onClick={e => { e.stopPropagation(); hideItem(item.masterItemId); }}
-                    style={{
-                      position: 'absolute',
-                      top: '4px',
-                      right: '4px',
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(0,0,0,0.08)',
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '9px',
-                      color: '#999',
-                      padding: 0,
-                      lineHeight: 1,
+        <>
+          {visibleItems.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+              {visibleItems.map(item => {
+                const inList = shopping.isAlreadyInList(item.masterItemId);
+                return (
+                  <div
+                    key={item.masterItemId}
+                    onClick={() => {
+                      if (inList) return;
+                      const added = shopping.addByMasterItemId(item.masterItemId);
+                      if (added && onAdded) onAdded(item.name);
                     }}
-                    title="非表示にする"
+                    style={{
+                      position: 'relative',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                      padding: '12px 8px 10px', borderRadius: '16px',
+                      border: inList ? '2px solid #A9DCC4' : '2px solid transparent',
+                      backgroundColor: inList ? '#E8F8F0' : '#FFFAF7',
+                      cursor: inList ? 'default' : 'pointer',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)', userSelect: 'none',
+                    }}
+                    className={inList ? '' : 'active:scale-95'}
                   >
-                    ✕
-                  </button>
-                )}
+                    {!inList && (
+                      <button
+                        onClick={e => { e.stopPropagation(); hideItem(item.masterItemId); }}
+                        style={{
+                          position: 'absolute', top: '4px', right: '4px',
+                          width: '18px', height: '18px', borderRadius: '50%',
+                          backgroundColor: 'rgba(0,0,0,0.08)', border: 'none', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '9px', color: '#999', padding: 0, lineHeight: 1,
+                        }}
+                        title="非表示にする"
+                      >✕</button>
+                    )}
+                    <span style={{ fontSize: '30px', lineHeight: 1 }}>{item.emoji}</span>
+                    <span style={{
+                      fontSize: '12px', fontWeight: 600, color: inList ? '#1A8A56' : '#2F2F3A',
+                      textAlign: 'center', lineHeight: 1.2, wordBreak: 'break-all',
+                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden', width: '100%',
+                    }}>{item.name}</span>
+                    {inList
+                      ? <span style={{ fontSize: '11px', color: '#1A8A56', fontWeight: 700 }}>✓ 追加済み</span>
+                      : <span style={{ fontSize: '11px', color: '#C0A898' }}>タップで追加</span>
+                    }
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-                <span style={{ fontSize: '30px', lineHeight: 1 }}>{item.emoji}</span>
-                <span style={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: inList ? '#1A8A56' : '#2F2F3A',
-                  textAlign: 'center',
-                  lineHeight: 1.2,
-                  wordBreak: 'break-all',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  width: '100%',
-                }}>
-                  {item.name}
-                </span>
-                {inList ? (
-                  <span style={{ fontSize: '11px', color: '#1A8A56', fontWeight: 700 }}>✓ 追加済み</span>
-                ) : (
-                  <span style={{ fontSize: '11px', color: '#C0A898' }}>タップで追加</span>
-                )}
+          {/* わが家の商品 */}
+          {customForView.length > 0 && (
+            <div style={{ marginTop: visibleItems.length > 0 ? '14px' : '0' }}>
+              <p style={{ fontSize: '11px', fontWeight: 700, color: '#A09890', marginBottom: '8px' }}>🏠 わが家の商品</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                {customForView.map(item => {
+                  const inList = shopping.isAlreadyInListByName(item.name);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        if (inList) return;
+                        const added = shopping.addByName(item.name, item.emoji, item.category, item.subCategory);
+                        if (added && onAdded) onAdded(item.name);
+                      }}
+                      style={{
+                        position: 'relative',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                        padding: '12px 8px 10px', borderRadius: '16px',
+                        border: inList ? '2px solid #A9DCC4' : '2px solid #E8E0F8',
+                        backgroundColor: inList ? '#E8F8F0' : '#F8F4FF',
+                        cursor: inList ? 'default' : 'pointer',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)', userSelect: 'none',
+                      }}
+                      className={inList ? '' : 'active:scale-95'}
+                    >
+                      {/* わが家バッジ */}
+                      <span style={{
+                        position: 'absolute', top: '4px', left: '5px',
+                        fontSize: '9px', fontWeight: 700, color: '#7C5FB5',
+                        backgroundColor: '#EDE8FA', padding: '1px 5px', borderRadius: '6px',
+                        lineHeight: 1.4,
+                      }}>わが家</span>
+
+                      {/* 非表示ボタン */}
+                      {!inList && onHideCustom && (
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (window.confirm(`「${item.name}」を一覧から非表示にしますか？\nあとで設定から元に戻せます。`)) {
+                              onHideCustom(item.id);
+                            }
+                          }}
+                          style={{
+                            position: 'absolute', top: '4px', right: '4px',
+                            width: '18px', height: '18px', borderRadius: '50%',
+                            backgroundColor: 'rgba(0,0,0,0.08)', border: 'none', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '9px', color: '#999', padding: 0, lineHeight: 1,
+                          }}
+                          title="非表示にする"
+                        >✕</button>
+                      )}
+
+                      <span style={{ fontSize: '30px', lineHeight: 1, marginTop: '6px' }}>{item.emoji}</span>
+                      <span style={{
+                        fontSize: '12px', fontWeight: 600, color: inList ? '#1A8A56' : '#2F2F3A',
+                        textAlign: 'center', lineHeight: 1.2, wordBreak: 'break-all',
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden', width: '100%',
+                      }}>{item.name}</span>
+                      {inList
+                        ? <span style={{ fontSize: '11px', color: '#1A8A56', fontWeight: 700 }}>✓ 追加済み</span>
+                        : <span style={{ fontSize: '11px', color: '#9080B0' }}>タップで追加</span>
+                      }
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

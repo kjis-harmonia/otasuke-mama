@@ -5,11 +5,13 @@ import type { ShoppingItem, ItemCategory } from '../types';
 import ItemQuickAddGrid from '../components/ItemQuickAddGrid';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { quickAddCategories } from '../data/quickAddCategories';
+import { useCustomItems } from '../hooks/useCustomItems';
 
 const ALL_QUICK_ITEMS = quickAddCategories.flatMap(cat => cat.items);
 
+// food の値は ItemQuickAddGrid の FOOD_SUB_CATS と完全一致させること
 const SUB_CATEGORIES: Record<ItemCategory, string[]> = {
-  food:  ['主食・米', '卵・乳製品', '豆腐・大豆製品', '根菜・いも類', '葉物野菜', '実野菜', 'きのこ類', '肉', '魚・海鮮', '果物', '調味料', '冷凍・作り置き'],
+  food:  ['主食・米', '卵・乳製品', '豆腐・大豆', '根菜・いも', '葉もの', '実野菜', 'きのこ', '肉', '魚・海鮮', '果物', '調味料', '冷凍'],
   daily: ['洗濯', '食器・キッチン', '紙類', 'お風呂・洗面', '掃除', '衛生用品', 'その他日用品'],
   baby:  ['おむつ', 'おしりふき', 'ミルク', 'おやつ', 'ベビー衛生', '保育園・学校用品', 'その他子ども用品'],
 };
@@ -32,12 +34,14 @@ const inputStyle: React.CSSProperties = {
 
 export default function ShoppingPage({ shopping, stock }: Props) {
   const [showManual, setShowManual] = useState(false);
+  const [saveToMyItems, setSaveToMyItems] = useState(true);
   const [manual, setManual] = useState({
     name: '',
     emoji: '🛒',
     category: 'food' as ItemCategory,
     subCategory: SUB_CATEGORIES['food'][0],
   });
+  const customItemsHook = useCustomItems();
   const [toast, setToast] = useState<string | null>(null);
   const { settings } = useFamilySettings();
   const pinnedItems = ALL_QUICK_ITEMS.filter(item =>
@@ -56,9 +60,18 @@ export default function ShoppingPage({ shopping, stock }: Props) {
 
   const handleManualAdd = () => {
     if (!manual.name.trim()) return;
-    const added = shopping.addByName(manual.name.trim(), manual.emoji, manual.category, manual.subCategory);
+    const name = manual.name.trim();
+    const added = shopping.addByName(name, manual.emoji, manual.category, manual.subCategory);
     if (added) {
-      showToast(manual.name.trim());
+      if (saveToMyItems) {
+        customItemsHook.addCustomItem({
+          name,
+          emoji: manual.emoji,
+          category: manual.category,
+          subCategory: manual.subCategory,
+        });
+      }
+      showToast(name);
       setManual({ name: '', emoji: '🛒', category: 'food', subCategory: SUB_CATEGORIES['food'][0] });
     }
   };
@@ -146,7 +159,12 @@ export default function ShoppingPage({ shopping, stock }: Props) {
               </div>
             </div>
           )}
-          <ItemQuickAddGrid shopping={shopping} onAdded={showToast} />
+          <ItemQuickAddGrid
+            shopping={shopping}
+            onAdded={showToast}
+            customItems={customItemsHook.visibleItems}
+            onHideCustom={customItemsHook.hideCustomItem}
+          />
         </div>
       </div>
 
@@ -358,6 +376,22 @@ export default function ShoppingPage({ shopping, stock }: Props) {
                 ))}
               </div>
             </div>
+
+            {/* 次回から表示する トグル */}
+            <button
+              onClick={() => setSaveToMyItems(p => !p)}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', alignSelf: 'flex-start' }}
+            >
+              <div style={{
+                width: '20px', height: '20px', borderRadius: '6px', flexShrink: 0,
+                border: `2px solid ${saveToMyItems ? '#F48A7A' : '#D0B8B0'}`,
+                backgroundColor: saveToMyItems ? '#F48A7A' : '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {saveToMyItems && <span style={{ color: '#fff', fontSize: '11px', fontWeight: 700, lineHeight: 1 }}>✓</span>}
+              </div>
+              <span style={{ fontSize: '13px', color: '#5A4A44', fontWeight: 500 }}>次回からこのカテゴリに表示する</span>
+            </button>
 
             <button
               onClick={handleManualAdd}

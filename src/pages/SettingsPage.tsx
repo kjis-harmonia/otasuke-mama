@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { UseBudgetReturn } from '../hooks/useBudget';
 import { useFamilySettings } from '../hooks/useFamilySettings';
 import { useHiddenItems } from '../hooks/useHiddenItems';
+import { useCustomItems } from '../hooks/useCustomItems';
 import { masterItems } from '../data/masterItems';
 import type { EatingTendency, TastePreference } from '../types';
 import Card from '../components/Card';
@@ -59,6 +60,7 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
   const [budgetInput, setBudgetInput] = useState('');
   const { settings: familySettings, updateSettings: updateFamily } = useFamilySettings();
   const { hidden, restoreItem, restoreAll } = useHiddenItems();
+  const customItems = useCustomItems();
 
   const handleCountChange = (field: 'adults' | 'children' | 'toddlers', delta: number) => {
     const current = familySettings[field];
@@ -277,6 +279,56 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
                 すべて表示に戻す
               </button>
             )}
+          </>
+        )}
+      </Card>
+
+      {/* わが家の商品管理 */}
+      <Card>
+        <h2 className="font-bold text-gray-800 text-base mb-3">🏠 わが家の商品管理</h2>
+        <p className="text-xs text-gray-400 mb-3">
+          登録済み: {customItems.visibleItems.length}品
+          {customItems.hiddenItems.length > 0 && `　非表示: ${customItems.hiddenItems.length}品`}
+        </p>
+
+        {customItems.hiddenItems.length === 0 ? (
+          <p className="text-sm text-gray-400">非表示にしているわが家の商品はありません</p>
+        ) : (
+          <>
+            <p className="text-xs text-gray-400 mb-3">非表示にした商品を元に戻せます</p>
+            <div className="space-y-2">
+              {customItems.hiddenItems.map(item => (
+                <div key={item.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-xl">{item.emoji}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-700 truncate">{item.name}</p>
+                      <p className="text-xs text-gray-400">{item.subCategory}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => customItems.restoreCustomItem(item.id)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                      style={{ backgroundColor: '#E8F8F0', color: '#1A8A56' }}
+                    >
+                      表示に戻す
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`「${item.name}」を完全に削除しますか？`)) {
+                          customItems.deleteCustomItem(item.id);
+                        }
+                      }}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                      style={{ backgroundColor: '#FFE3D5', color: '#B85A28' }}
+                    >
+                      削除
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         )}
       </Card>
