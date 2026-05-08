@@ -23,6 +23,7 @@ export function useShoppingList() {
       name: master.name,
       emoji: master.emoji,
       category: master.category,
+      subCategory: master.subCategory,
       checked: false,
       addedAt: '2026-05-07',
     };
@@ -30,13 +31,14 @@ export function useShoppingList() {
     return true;
   };
 
-  const addByName = (name: string, emoji: string, category: ItemCategory) => {
+  const addByName = (name: string, emoji: string, category: ItemCategory, subCategory?: string) => {
     if (list.some(i => i.name === name && !i.checked)) return false;
     const newItem: ShoppingItem = {
       id: genId(),
       name,
       emoji,
       category,
+      subCategory,
       checked: false,
       addedAt: '2026-05-07',
     };

@@ -8,6 +8,12 @@ import { quickAddCategories } from '../data/quickAddCategories';
 
 const ALL_QUICK_ITEMS = quickAddCategories.flatMap(cat => cat.items);
 
+const SUB_CATEGORIES: Record<ItemCategory, string[]> = {
+  food:  ['主食・米', '卵・乳製品', '豆腐・大豆製品', '根菜・いも類', '葉物野菜', '実野菜', 'きのこ類', '肉', '魚・海鮮', '果物', '調味料', '冷凍・作り置き'],
+  daily: ['洗濯', '食器・キッチン', '紙類', 'お風呂・洗面', '掃除', '衛生用品', 'その他日用品'],
+  baby:  ['おむつ', 'おしりふき', 'ミルク', 'おやつ', 'ベビー衛生', '保育園・学校用品', 'その他子ども用品'],
+};
+
 interface Props {
   shopping: UseShoppingListReturn;
   stock: UseStockReturn;
@@ -26,7 +32,12 @@ const inputStyle: React.CSSProperties = {
 
 export default function ShoppingPage({ shopping, stock }: Props) {
   const [showManual, setShowManual] = useState(false);
-  const [manual, setManual] = useState({ name: '', emoji: '🛒', category: 'food' as ItemCategory });
+  const [manual, setManual] = useState({
+    name: '',
+    emoji: '🛒',
+    category: 'food' as ItemCategory,
+    subCategory: SUB_CATEGORIES['food'][0],
+  });
   const [toast, setToast] = useState<string | null>(null);
   const { settings } = useFamilySettings();
   const pinnedItems = ALL_QUICK_ITEMS.filter(item =>
@@ -45,10 +56,10 @@ export default function ShoppingPage({ shopping, stock }: Props) {
 
   const handleManualAdd = () => {
     if (!manual.name.trim()) return;
-    const added = shopping.addByName(manual.name.trim(), manual.emoji, manual.category);
+    const added = shopping.addByName(manual.name.trim(), manual.emoji, manual.category, manual.subCategory);
     if (added) {
       showToast(manual.name.trim());
-      setManual({ name: '', emoji: '🛒', category: 'food' });
+      setManual({ name: '', emoji: '🛒', category: 'food', subCategory: SUB_CATEGORIES['food'][0] });
     }
   };
 
@@ -291,7 +302,7 @@ export default function ShoppingPage({ shopping, stock }: Props) {
         }}
         className="active:scale-95 transition-transform"
       >
-        {showManual ? '▲ その他・手入力を閉じる' : '▼ その他を手入力で追加（補助機能）'}
+        {showManual ? '▲ 閉じる' : '▼ 商品名を入力して追加'}
       </button>
 
       {showManual && (
@@ -311,15 +322,43 @@ export default function ShoppingPage({ shopping, stock }: Props) {
                 onChange={e => setManual(p => ({ ...p, emoji: e.target.value }))}
               />
             </div>
-            <select
-              style={{ ...inputStyle, cursor: 'pointer' }}
-              value={manual.category}
-              onChange={e => setManual(p => ({ ...p, category: e.target.value as ItemCategory }))}
-            >
-              <option value="food">食品</option>
-              <option value="daily">日用品</option>
-              <option value="baby">子ども用品</option>
-            </select>
+            {/* 大カテゴリ */}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {([['food', '食品'], ['daily', '日用品'], ['baby', '子ども用品']] as [ItemCategory, string][]).map(([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => setManual(p => ({ ...p, category: val, subCategory: SUB_CATEGORIES[val][0] }))}
+                  style={{
+                    flex: 1, padding: '9px 4px', borderRadius: '12px', fontSize: '13px', fontWeight: 600,
+                    border: 'none', cursor: 'pointer',
+                    backgroundColor: manual.category === val ? '#F48A7A' : '#F0E8E4',
+                    color: manual.category === val ? '#fff' : '#8C7068',
+                  }}
+                  className="active:scale-95"
+                >{label}</button>
+              ))}
+            </div>
+
+            {/* 中カテゴリ */}
+            <div>
+              <p style={{ fontSize: '11px', color: '#A09890', fontWeight: 600, marginBottom: '6px' }}>中カテゴリ</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {SUB_CATEGORIES[manual.category].map(sub => (
+                  <button
+                    key={sub}
+                    onClick={() => setManual(p => ({ ...p, subCategory: sub }))}
+                    style={{
+                      padding: '5px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
+                      border: 'none', cursor: 'pointer',
+                      backgroundColor: manual.subCategory === sub ? '#F48A7A' : '#F0E8E4',
+                      color: manual.subCategory === sub ? '#fff' : '#8C7068',
+                    }}
+                    className="active:scale-95"
+                  >{sub}</button>
+                ))}
+              </div>
+            </div>
+
             <button
               onClick={handleManualAdd}
               style={{ minHeight: '48px', backgroundColor: '#F48A7A', color: '#fff', borderRadius: '14px', fontWeight: 700, fontSize: '15px', border: 'none', cursor: 'pointer' }}

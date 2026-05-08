@@ -63,6 +63,7 @@ export interface ShoppingItem {
   name: string;
   emoji: string;
   category: ItemCategory;
+  subCategory?: string;
   checked: boolean;
   addedAt: string;
   quantity?: number;
