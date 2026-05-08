@@ -1,5 +1,5 @@
 import { useLocalStorage } from './useLocalStorage';
-import type { StockItem, FrozenItem, StockStatus, ItemCategory, Location } from '../types';
+import type { StockItem, FrozenItem, StockStatus, ItemCategory, Location, ExpiryType } from '../types';
 import { initialStock } from '../data/initialStock';
 import { getMasterItem } from '../data/masterItems';
 import { calcStockStatus } from '../utils/stockUtils';
@@ -69,6 +69,8 @@ export function useStock() {
     unit: string;
     quantity?: number;
     subCategory?: string;
+    expiryDate?: string;
+    expiryType?: ExpiryType;
   }) => {
     const newItem: StockItem = {
       id: genId(),
@@ -82,6 +84,7 @@ export function useStock() {
       location: item.location,
       memo: '',
       lastUpdatedAt: '2026-05-07',
+      ...(item.expiryDate ? { expiryDate: item.expiryDate, expiryType: item.expiryType ?? '賞味期限' } : {}),
     };
     setStock(prev => [...prev, newItem]);
   };
