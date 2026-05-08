@@ -38,6 +38,17 @@ export default function HomePage({ stock, shopping, budget, recipes, onTabChange
           <h1 className="text-2xl font-bold text-gray-800">お助けママ 👩‍👧‍👦</h1>
           <p className="text-sm text-gray-400 mt-0.5">2026年5月7日（木）</p>
         </div>
+        <button
+          onClick={() => onTabChange('settings')}
+          style={{
+            width: '40px', height: '40px', borderRadius: '50%',
+            border: 'none', backgroundColor: '#F0E8E4',
+            fontSize: '20px', cursor: 'pointer', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}
+          className="active:scale-95"
+          title="設定"
+        >⚙️</button>
       </div>
 
       {/* 今週の食費カード */}

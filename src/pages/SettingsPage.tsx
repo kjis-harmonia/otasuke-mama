@@ -5,10 +5,13 @@ import { useHiddenItems } from '../hooks/useHiddenItems';
 import { useCustomItems } from '../hooks/useCustomItems';
 import { useGuide } from '../hooks/useGuide';
 import { useNotificationPrefs } from '../hooks/useNotificationPrefs';
+import { useRecentIcons } from '../hooks/useRecentIcons';
 import { masterItems } from '../data/masterItems';
-import type { EatingTendency, TastePreference } from '../types';
+import type { EatingTendency, TastePreference, CustomItem } from '../types';
 import Card from '../components/Card';
 import GuideModal from '../components/GuideModal';
+import ItemIcon from '../components/ItemIcon';
+import IconPickerModal from '../components/IconPickerModal';
 
 interface Props {
   budget: UseBudgetReturn;
@@ -60,11 +63,13 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
   const [showSetupConfirm, setShowSetupConfirm] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [budgetInput, setBudgetInput] = useState('');
+  const [editingIconItem, setEditingIconItem] = useState<CustomItem | null>(null);
   const { settings: familySettings, updateSettings: updateFamily } = useFamilySettings();
   const { hidden, restoreItem, restoreAll } = useHiddenItems();
   const customItems = useCustomItems();
   const guide = useGuide();
   const { prefs, updatePrefs } = useNotificationPrefs();
+  const { addRecentIcon } = useRecentIcons();
 
   const handleCountChange = (field: 'adults' | 'children' | 'toddlers', delta: number) => {
     const current = familySettings[field];
@@ -376,22 +381,64 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
           {customItems.hiddenItems.length > 0 && `　非表示: ${customItems.hiddenItems.length}品`}
         </p>
 
-        {customItems.hiddenItems.length === 0 ? (
-          <p className="text-sm text-gray-400">非表示にしているわが家の商品はありません</p>
-        ) : (
+        {/* 表示中の商品 */}
+        {customItems.visibleItems.length > 0 && (
+          <div className="space-y-2 mb-3">
+            {customItems.visibleItems.map(item => (
+              <div key={item.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <ItemIcon emoji={item.emoji} customIconData={item.customIconData} iconShape={item.iconShape} size={28} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-700 truncate">{item.name}</p>
+                    <p className="text-xs text-gray-400">{item.subCategory}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => setEditingIconItem(item)}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                    style={{ backgroundColor: '#EDE8FA', color: '#7C5FB5' }}
+                  >
+                    🎨 アイコン
+                  </button>
+                  <button
+                    onClick={() => customItems.hideCustomItem(item.id)}
+                    className="text-xs font-medium px-2 py-1.5 rounded-lg"
+                    style={{ backgroundColor: '#F0E8E4', color: '#8C7068' }}
+                  >
+                    非表示
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {customItems.visibleItems.length === 0 && customItems.hiddenItems.length === 0 && (
+          <p className="text-sm text-gray-400 mb-3">わが家の商品がまだ登録されていません</p>
+        )}
+
+        {/* 非表示の商品 */}
+        {customItems.hiddenItems.length > 0 && (
           <>
-            <p className="text-xs text-gray-400 mb-3">非表示にした商品を元に戻せます</p>
+            <p className="text-xs text-gray-400 mb-2">非表示にした商品</p>
             <div className="space-y-2">
               {customItems.hiddenItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5">
+                <div key={item.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5 opacity-60">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-xl">{item.emoji}</span>
+                    <ItemIcon emoji={item.emoji} customIconData={item.customIconData} iconShape={item.iconShape} size={24} />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-700 truncate">{item.name}</p>
                       <p className="text-xs text-gray-400">{item.subCategory}</p>
                     </div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => setEditingIconItem(item)}
+                      className="text-xs font-bold px-2 py-1.5 rounded-lg"
+                      style={{ backgroundColor: '#EDE8FA', color: '#7C5FB5' }}
+                    >
+                      🎨
+                    </button>
                     <button
                       onClick={() => customItems.restoreCustomItem(item.id)}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg"
@@ -405,7 +452,7 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
                           customItems.deleteCustomItem(item.id);
                         }
                       }}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                      className="text-xs font-bold px-2 py-1.5 rounded-lg"
                       style={{ backgroundColor: '#FFE3D5', color: '#B85A28' }}
                     >
                       削除
@@ -417,6 +464,25 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
           </>
         )}
       </Card>
+
+      {/* アイコン変更モーダル */}
+      {editingIconItem && (
+        <IconPickerModal
+          currentEmoji={editingIconItem.emoji}
+          currentIconData={editingIconItem.customIconData}
+          currentShape={editingIconItem.iconShape ?? 'square'}
+          onConfirm={(emoji, iconData, shape) => {
+            customItems.updateCustomItem(editingIconItem.id, {
+              emoji,
+              customIconData: iconData,
+              iconShape: shape,
+            });
+            addRecentIcon({ emoji, customIconData: iconData, iconShape: shape });
+            setEditingIconItem(null);
+          }}
+          onClose={() => setEditingIconItem(null)}
+        />
+      )}
 
       {/* データの管理 */}
       <Card>

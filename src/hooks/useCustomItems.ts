@@ -33,6 +33,10 @@ export function useCustomItems() {
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
+  const updateCustomItem = (id: string, updates: Partial<Omit<CustomItem, 'id' | 'createdAt'>>) => {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
+  };
+
   return {
     items,
     visibleItems,
@@ -41,6 +45,7 @@ export function useCustomItems() {
     hideCustomItem,
     restoreCustomItem,
     deleteCustomItem,
+    updateCustomItem,
   };
 }
 

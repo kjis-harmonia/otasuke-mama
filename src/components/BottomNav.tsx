@@ -1,12 +1,11 @@
 import type { TabName } from '../App';
 
 const TABS: { id: TabName; label: string; emoji: string }[] = [
-  { id: 'home',      label: 'ホーム',     emoji: '🏠' },
-  { id: 'inventory', label: '在庫',       emoji: '📦' },
-  { id: 'shopping',  label: '買い物',     emoji: '🛒' },
-  { id: 'budget',    label: '家計簿',     emoji: '💰' },
-  { id: 'recipes',   label: 'うちレシピ', emoji: '🍳' },
-  { id: 'settings',  label: '設定',       emoji: '⚙️' },
+  { id: 'home',      label: 'ホーム',  emoji: '🏠' },
+  { id: 'inventory', label: '在庫',    emoji: '📦' },
+  { id: 'shopping',  label: '買い物',  emoji: '🛒' },
+  { id: 'budget',    label: '家計簿',  emoji: '💰' },
+  { id: 'recipes',   label: '献立',    emoji: '🍴' },
 ];
 
 interface Props {

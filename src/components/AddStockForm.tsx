@@ -3,11 +3,14 @@ import type { UseStockReturn } from '../hooks/useStock';
 import type { ExpiryType, Location, ItemCategory, MasterItem } from '../types';
 import { masterItems } from '../data/masterItems';
 import { useCustomItems } from '../hooks/useCustomItems';
+import ItemIcon from './ItemIcon';
 
 type BigCat = 'food' | 'daily' | 'baby' | 'frozen';
 
 interface GridItem extends MasterItem {
   isCustom?: boolean;
+  customIconData?: string;
+  iconShape?: 'circle' | 'square';
 }
 
 interface Props {
@@ -113,6 +116,8 @@ export default function AddStockForm({ initialBigCat, stock, onClose }: Props) {
         defaultLocation: DEFAULT_LOC[bigCat],
         isQuickAdd: false,
         isCustom: true,
+        customIconData: c.customIconData,
+        iconShape: c.iconShape,
       }));
 
     return [...base, ...customs];
@@ -340,7 +345,7 @@ export default function AddStockForm({ initialBigCat, stock, onClose }: Props) {
               {inStock && !isSelected && (
                 <span style={{ position: 'absolute', top: '3px', right: '4px', fontSize: '9px', color: '#1A8A56', fontWeight: 700 }}>✓</span>
               )}
-              <span style={{ fontSize: '20px' }}>{item.emoji}</span>
+              <ItemIcon emoji={item.emoji} customIconData={item.customIconData} iconShape={item.iconShape} size={20} />
               <span style={{ fontSize: '10px', fontWeight: 600, color: isSelected ? st.accent : '#5C4C44', textAlign: 'center', lineHeight: 1.3, wordBreak: 'break-all' }}>
                 {item.name}
               </span>

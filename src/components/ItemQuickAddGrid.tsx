@@ -3,6 +3,7 @@ import type { UseShoppingListReturn } from '../hooks/useShoppingList';
 import type { CustomItem, ItemCategory } from '../types';
 import { quickAddCategories } from '../data/quickAddCategories';
 import { useHiddenItems } from '../hooks/useHiddenItems';
+import ItemIcon from './ItemIcon';
 
 const FOOD_SUB_CATS = [
   'よく買う', '主食・米', '卵・乳製品', '豆腐・大豆', '根菜・いも',
@@ -224,7 +225,7 @@ export default function ItemQuickAddGrid({ shopping, onAdded, customItems = [], 
                         >✕</button>
                       )}
 
-                      <span style={{ fontSize: '30px', lineHeight: 1, marginTop: '6px' }}>{item.emoji}</span>
+                      <ItemIcon emoji={item.emoji} customIconData={item.customIconData} iconShape={item.iconShape} size={30} style={{ marginTop: '6px' }} />
                       <span style={{
                         fontSize: '12px', fontWeight: 600, color: inList ? '#1A8A56' : '#2F2F3A',
                         textAlign: 'center', lineHeight: 1.2, wordBreak: 'break-all',

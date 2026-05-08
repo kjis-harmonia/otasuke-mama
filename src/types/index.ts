@@ -166,6 +166,8 @@ export interface CustomItem {
   subCategory: string;
   createdAt: string;
   hidden?: boolean;
+  customIconData?: string;          // base64 画像データ（優先表示）
+  iconShape?: 'circle' | 'square'; // アイコン形状
 }
 
 // ─── 設定 ─────────────────────────────────────────────────
@@ -220,6 +222,38 @@ export interface NotificationPrefs {
   shoppingReminderDay: number; // 0=Sun, 1=Mon … 6=Sat
   weeklyBudgetReview: boolean;
   recipeReminder: boolean;
+}
+
+// ─── 献立 ─────────────────────────────────────────────────────
+export interface MealIngredient {
+  name: string;
+  emoji: string;
+}
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner';
+
+export interface MealEntry {
+  id: string;
+  date: string;
+  mealType: MealType;
+  name: string;
+  emoji: string;
+  note?: string;
+  source: 'manual' | 'recipe' | 'mamunity';
+  ingredients?: MealIngredient[];
+}
+
+// ─── ママニティ ────────────────────────────────────────────────
+export interface MamunityPost {
+  id: string;
+  author: string;
+  avatar: string;
+  text: string;
+  dishName: string;
+  dishEmoji: string;
+  likes: number;
+  tags: string[];
+  postedAt: string;
 }
 
 // ─── アプリ全体 ───────────────────────────────────────────

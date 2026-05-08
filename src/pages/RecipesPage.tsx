@@ -9,6 +9,9 @@ import CustomRecipeForm from '../components/CustomRecipeForm';
 import { getExpiryInfo, isAlertExpiry } from '../utils/expiryUtils';
 import MiniGuide from '../components/MiniGuide';
 import { isTabGuideSeen, markTabGuideSeen } from '../hooks/useGuide';
+import { useMealPlan } from '../hooks/useMealPlan';
+import WeeklyMealPlan from '../components/WeeklyMealPlan';
+import MamunityFeed from '../components/MamunityFeed';
 
 interface Props {
   recipes: UseRecipesReturn;
@@ -17,7 +20,8 @@ interface Props {
   expiryTabTrigger?: number;
 }
 
-type RecipeTab = 'can_cook' | 'one_more' | 'two_more' | 'savings' | 'expiry' | 'my_recipes';
+type MealPageTab = 'today' | 'weekly' | 'mamunity' | 'my_recipes';
+type RecipeTab = 'can_cook' | 'one_more' | 'two_more' | 'savings' | 'expiry';
 
 const portionFeedbackOptions: { value: PortionFeedback; label: string }[] = [
   { value: 'much_less',     label: 'かなり少なかった' },
@@ -110,7 +114,6 @@ function RecipeCard({ match, onCook, onDelete, onAddMissingToShopping }: {
         <div style={{ padding: '0 16px 16px', borderTop: '1px solid #F0E8E4' }}>
           <div style={{ paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-            {/* 家族メモ（うちレシピのみ） */}
             {isCustom && recipe.familyMemo && (
               <div style={{ backgroundColor: '#FFF8F1', borderRadius: '12px', padding: '10px 14px', border: '1.5px solid #FFE3D5' }}>
                 <p style={{ fontSize: '12px', fontWeight: 700, color: '#B85A28', marginBottom: '4px' }}>💬 家族メモ</p>
@@ -118,7 +121,6 @@ function RecipeCard({ match, onCook, onDelete, onAddMissingToShopping }: {
               </div>
             )}
 
-            {/* 材料 */}
             {isCustom && recipe.ingredients && recipe.ingredients.length > 0 ? (
               <div>
                 <p style={{ fontSize: '12px', fontWeight: 700, color: '#A09890', marginBottom: '6px' }}>材料</p>
@@ -143,7 +145,6 @@ function RecipeCard({ match, onCook, onDelete, onAddMissingToShopping }: {
               </div>
             ) : null}
 
-            {/* 調味料 */}
             {isCustom && recipe.seasonings && recipe.seasonings.length > 0 ? (
               <div>
                 <p style={{ fontSize: '12px', fontWeight: 700, color: '#A09890', marginBottom: '6px' }}>調味料</p>
@@ -165,7 +166,6 @@ function RecipeCard({ match, onCook, onDelete, onAddMissingToShopping }: {
               </div>
             ) : null}
 
-            {/* 作り方 / コツ */}
             {isCustom && recipe.stepsMemo ? (
               <div>
                 <p style={{ fontSize: '12px', fontWeight: 700, color: '#A09890', marginBottom: '4px' }}>作り方メモ</p>
@@ -182,7 +182,6 @@ function RecipeCard({ match, onCook, onDelete, onAddMissingToShopping }: {
               </div>
             ) : null}
 
-            {/* 不足食材を追加 */}
             {missing.length > 0 && (
               <div>
                 <p style={{ fontSize: '12px', fontWeight: 700, color: '#A09890', marginBottom: '6px' }}>不足食材を買い物リストへ追加</p>
@@ -198,7 +197,6 @@ function RecipeCard({ match, onCook, onDelete, onAddMissingToShopping }: {
               </div>
             )}
 
-            {/* 作ったボタン */}
             {status === 'can_cook' && (
               <button onClick={onCook}
                 style={{ width: '100%', minHeight: '48px', backgroundColor: '#F48A7A', color: '#fff', borderRadius: '14px', fontWeight: 700, fontSize: '15px', border: 'none', cursor: 'pointer' }}
@@ -207,7 +205,6 @@ function RecipeCard({ match, onCook, onDelete, onAddMissingToShopping }: {
               </button>
             )}
 
-            {/* 削除ボタン（うちレシピのみ） */}
             {isCustom && onDelete && (
               <div>
                 {!confirmDelete ? (
@@ -240,6 +237,7 @@ function RecipeCard({ match, onCook, onDelete, onAddMissingToShopping }: {
 }
 
 export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger }: Props) {
+  const [mealPageTab, setMealPageTab] = useState<MealPageTab>('today');
   const [activeTab, setActiveTab] = useState<RecipeTab>('can_cook');
   const [showGuide, setShowGuide] = useState(() => !isTabGuideSeen('recipes'));
   const [feedbackMode, setFeedbackMode] = useState<string | null>(null);
@@ -247,9 +245,13 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
   const [portionFeedback, setPortionFeedback] = useState<PortionFeedback>('just_right');
   const [tasteFeedback, setTasteFeedback] = useState<TasteFeedback>('just_right');
   const [showForm, setShowForm] = useState(false);
+  const mealPlan = useMealPlan();
 
   useEffect(() => {
-    if (expiryTabTrigger && expiryTabTrigger > 0) setActiveTab('expiry');
+    if (expiryTabTrigger && expiryTabTrigger > 0) {
+      setMealPageTab('today');
+      setActiveTab('expiry');
+    }
   }, [expiryTabTrigger]);
 
   const expiringIds = new Set(
@@ -267,7 +269,6 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
 
   const handleCook = (match: RecipeMatch) => {
     if (match.recipe.isCustomRecipe && match.recipe.ingredients) {
-      // うちレシピ：fractionValue で分数減算
       const deducted: string[] = [];
       match.recipe.ingredients
         .filter(i => i.required && i.masterItemId && (i.fractionValue ?? 0) > 0)
@@ -282,7 +283,6 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
         });
       setFeedbackSummary(deducted.length > 0 ? deducted.join('、') : '');
     } else {
-      // 定番レシピ：整数で減算
       match.recipe.requiredItemIds.forEach(id => stock.decrementByMasterItemId(id, 1));
       (match.recipe.requiredGroups ?? []).forEach(group => {
         const available = group.itemIds.find(id =>
@@ -303,13 +303,12 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
     setTasteFeedback('just_right');
   };
 
-  const tabs: { id: RecipeTab; label: string; emoji: string; count: number }[] = [
-    { id: 'can_cook',    label: '今作れる',    emoji: '✅', count: recipes.canCook.length },
-    { id: 'one_more',    label: 'あと1品',     emoji: '🛒', count: recipes.oneMissing.length },
-    { id: 'two_more',    label: 'あと2品',     emoji: '📋', count: recipes.twoMissing.length },
-    { id: 'savings',     label: '節約メニュー', emoji: '💰', count: recipes.savingsMenu.length },
-    { id: 'expiry',      label: '期限近い',     emoji: '⏰', count: expiryMatches.length },
-    { id: 'my_recipes',  label: 'わが家',       emoji: '🏠', count: recipes.customRecipes.length },
+  const innerTabs: { id: RecipeTab; label: string; emoji: string; count: number }[] = [
+    { id: 'can_cook',  label: '今作れる',    emoji: '✅', count: recipes.canCook.length },
+    { id: 'one_more',  label: 'あと1品',     emoji: '🛒', count: recipes.oneMissing.length },
+    { id: 'two_more',  label: 'あと2品',     emoji: '📋', count: recipes.twoMissing.length },
+    { id: 'savings',   label: '節約メニュー', emoji: '💰', count: recipes.savingsMenu.length },
+    { id: 'expiry',    label: '期限近い',     emoji: '⏰', count: expiryMatches.length },
   ];
 
   const myRecipesMatches: RecipeMatch[] = recipes.customRecipes.map(recipe => {
@@ -318,17 +317,22 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
   });
 
   const displayMatches =
-    activeTab === 'can_cook'   ? recipes.canCook :
-    activeTab === 'one_more'   ? recipes.oneMissing :
-    activeTab === 'two_more'   ? recipes.twoMissing :
-    activeTab === 'savings'    ? recipes.savingsMenu :
-    activeTab === 'my_recipes' ? myRecipesMatches :
+    activeTab === 'can_cook'  ? recipes.canCook :
+    activeTab === 'one_more'  ? recipes.oneMissing :
+    activeTab === 'two_more'  ? recipes.twoMissing :
+    activeTab === 'savings'   ? recipes.savingsMenu :
     expiryMatches;
+
+  const outerTabs: { id: MealPageTab; label: string; emoji: string }[] = [
+    { id: 'today',      label: '今日作れる',   emoji: '✅' },
+    { id: 'weekly',     label: '1週間献立',    emoji: '📅' },
+    { id: 'mamunity',   label: 'ママニティ',   emoji: '👥' },
+    { id: 'my_recipes', label: 'わが家レシピ', emoji: '🏠' },
+  ];
 
   return (
     <div style={{ padding: '16px 16px 8px' }}>
 
-      {/* うちのレシピ登録フォーム */}
       {showForm && (
         <CustomRecipeForm
           onSave={input => { recipes.addCustomRecipe(input); setShowForm(false); }}
@@ -339,55 +343,156 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
       {/* ヘッダー */}
       <div style={{ paddingTop: '8px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#2F2F3A', margin: 0 }}>🍳 うちレシピ</h1>
-          <p style={{ fontSize: '13px', color: '#A09890', margin: '4px 0 0' }}>在庫から作れるメニューを提案</p>
+          <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#2F2F3A', margin: 0 }}>🍴 献立</h1>
+          <p style={{ fontSize: '13px', color: '#A09890', margin: '4px 0 0' }}>
+            {mealPageTab === 'today'      && '在庫から作れるメニューを提案'}
+            {mealPageTab === 'weekly'     && '今週の献立を計画しよう'}
+            {mealPageTab === 'mamunity'   && '全国ママの献立アイデア'}
+            {mealPageTab === 'my_recipes' && 'うちだけのオリジナルレシピ'}
+          </p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '5px',
-            padding: '10px 14px', borderRadius: '12px', border: 'none',
-            backgroundColor: '#F48A7A', color: '#fff',
-            fontSize: '13px', fontWeight: 700, cursor: 'pointer', flexShrink: 0,
-          }}
-          className="active:scale-95 transition-transform"
-        >
-          ＋ うちのレシピ
-        </button>
+        {mealPageTab === 'my_recipes' && (
+          <button
+            onClick={() => setShowForm(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '10px 14px', borderRadius: '12px', border: 'none',
+              backgroundColor: '#F48A7A', color: '#fff',
+              fontSize: '13px', fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+            }}
+            className="active:scale-95 transition-transform"
+          >
+            ＋ うちのレシピ
+          </button>
+        )}
       </div>
 
-      {/* 登録済みバッジ */}
-      {recipes.customRecipes.length > 0 && (
-        <div style={{ backgroundColor: '#EAF4FF', borderRadius: '10px', padding: '8px 12px', marginBottom: '12px', fontSize: '12px', color: '#1A507A', fontWeight: 600 }}>
-          🏠 うちのレシピ {recipes.customRecipes.length}品 登録済み
-        </div>
-      )}
-
-      {/* タブ */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '16px' }}>
-        {tabs.map(tab => {
-          const isActive = activeTab === tab.id;
+      {/* 外側タブ */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+        {outerTabs.map(tab => {
+          const isActive = mealPageTab === tab.id;
           return (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            <button
+              key={tab.id}
+              onClick={() => setMealPageTab(tab.id)}
               style={{
-                flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px',
-                padding: '8px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 600,
+                flex: 1,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px',
+                padding: '8px 4px',
+                borderRadius: '12px', fontSize: '11px', fontWeight: 600,
                 border: 'none', cursor: 'pointer',
                 backgroundColor: isActive ? '#F48A7A' : '#F0E8E4',
                 color: isActive ? '#fff' : '#8C7068',
               }}
-              className="active:scale-95">
-              <span>{tab.emoji}</span>
+              className="active:scale-95"
+            >
+              <span style={{ fontSize: '16px' }}>{tab.emoji}</span>
               <span>{tab.label}</span>
-              <span style={{
-                fontSize: '11px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px',
-                backgroundColor: isActive ? 'rgba(255,255,255,0.3)' : '#E0D4CE',
-                color: isActive ? '#fff' : '#8C7068',
-              }}>{tab.count}</span>
             </button>
           );
         })}
       </div>
+
+      {/* ─── 今日作れる ─── */}
+      {mealPageTab === 'today' && (
+        <>
+          {/* 内側タブ */}
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '16px' }}>
+            {innerTabs.map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px',
+                    padding: '8px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 600,
+                    border: 'none', cursor: 'pointer',
+                    backgroundColor: isActive ? '#F48A7A' : '#F0E8E4',
+                    color: isActive ? '#fff' : '#8C7068',
+                  }}
+                  className="active:scale-95">
+                  <span>{tab.emoji}</span>
+                  <span>{tab.label}</span>
+                  <span style={{
+                    fontSize: '11px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px',
+                    backgroundColor: isActive ? 'rgba(255,255,255,0.3)' : '#E0D4CE',
+                    color: isActive ? '#fff' : '#8C7068',
+                  }}>{tab.count}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {displayMatches.length === 0 ? (
+            <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '32px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', textAlign: 'center' }}>
+              <p style={{ fontSize: '28px', marginBottom: '8px' }}>🤔</p>
+              <p style={{ color: '#A09890', fontSize: '14px' }}>
+                {activeTab === 'can_cook'  && '今すぐ作れるレシピがありません'}
+                {activeTab === 'one_more'  && 'あと1品で作れるレシピがありません'}
+                {activeTab === 'two_more'  && 'あと2品で作れるレシピがありません'}
+                {activeTab === 'savings'   && '節約メニューがありません'}
+                {activeTab === 'expiry'    && '期限が近い食材を使ったレシピがありません'}
+              </p>
+              {activeTab === 'can_cook' && (
+                <p style={{ fontSize: '12px', color: '#C0A898', marginTop: '4px' }}>在庫を増やすと提案が増えます</p>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {displayMatches.map(match => (
+                <RecipeCard
+                  key={match.recipe.id}
+                  match={match}
+                  onCook={() => handleCook(match)}
+                  onDelete={match.recipe.isCustomRecipe
+                    ? () => recipes.deleteCustomRecipe(match.recipe.id)
+                    : undefined}
+                  onAddMissingToShopping={id => shopping.addByMasterItemId(id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ─── 1週間献立 ─── */}
+      {mealPageTab === 'weekly' && (
+        <WeeklyMealPlan mealPlan={mealPlan} shopping={shopping} />
+      )}
+
+      {/* ─── ママニティ ─── */}
+      {mealPageTab === 'mamunity' && (
+        <MamunityFeed mealPlan={mealPlan} />
+      )}
+
+      {/* ─── わが家レシピ ─── */}
+      {mealPageTab === 'my_recipes' && (
+        <>
+          {recipes.customRecipes.length > 0 && (
+            <div style={{ backgroundColor: '#EAF4FF', borderRadius: '10px', padding: '8px 12px', marginBottom: '12px', fontSize: '12px', color: '#1A507A', fontWeight: 600 }}>
+              🏠 うちのレシピ {recipes.customRecipes.length}品 登録済み
+            </div>
+          )}
+          {myRecipesMatches.length === 0 ? (
+            <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '32px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', textAlign: 'center' }}>
+              <p style={{ fontSize: '28px', marginBottom: '8px' }}>🤔</p>
+              <p style={{ color: '#A09890', fontSize: '14px' }}>うちのレシピがまだありません</p>
+              <p style={{ fontSize: '12px', color: '#C0A898', marginTop: '4px' }}>右上の「＋ うちのレシピ」から登録しましょう</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {myRecipesMatches.map(match => (
+                <RecipeCard
+                  key={match.recipe.id}
+                  match={match}
+                  onCook={() => handleCook(match)}
+                  onDelete={() => recipes.deleteCustomRecipe(match.recipe.id)}
+                  onAddMissingToShopping={id => shopping.addByMasterItemId(id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       {/* フィードバックモーダル */}
       {feedbackMode && (
@@ -440,46 +545,11 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
         </div>
       )}
 
-      {/* レシピ一覧 */}
-      {displayMatches.length === 0 ? (
-        <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '32px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', textAlign: 'center' }}>
-          <p style={{ fontSize: '28px', marginBottom: '8px' }}>🤔</p>
-          <p style={{ color: '#A09890', fontSize: '14px' }}>
-            {activeTab === 'can_cook'   && '今すぐ作れるレシピがありません'}
-            {activeTab === 'one_more'   && 'あと1品で作れるレシピがありません'}
-            {activeTab === 'two_more'   && 'あと2品で作れるレシピがありません'}
-            {activeTab === 'savings'    && '節約メニューがありません'}
-            {activeTab === 'expiry'     && '期限が近い食材を使ったレシピがありません'}
-            {activeTab === 'my_recipes' && 'うちのレシピがまだありません'}
-          </p>
-          {activeTab === 'can_cook' && (
-            <p style={{ fontSize: '12px', color: '#C0A898', marginTop: '4px' }}>在庫を増やすと提案が増えます</p>
-          )}
-          {activeTab === 'my_recipes' && (
-            <p style={{ fontSize: '12px', color: '#C0A898', marginTop: '4px' }}>右上の「＋ うちのレシピ」から登録しましょう</p>
-          )}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {displayMatches.map(match => (
-            <RecipeCard
-              key={match.recipe.id}
-              match={match}
-              onCook={() => handleCook(match)}
-              onDelete={match.recipe.isCustomRecipe
-                ? () => recipes.deleteCustomRecipe(match.recipe.id)
-                : undefined}
-              onAddMissingToShopping={id => shopping.addByMasterItemId(id)}
-            />
-          ))}
-        </div>
-      )}
-
       {showGuide && (
         <MiniGuide
-          emoji="🍳"
-          title="うちレシピタブへようこそ"
-          desc="在庫データをもとに「今すぐ作れる」料理を自動で提案します。使い切りメニューも見られます。"
+          emoji="🍴"
+          title="献立タブへようこそ"
+          desc="在庫データをもとに「今すぐ作れる」料理を自動で提案します。1週間の献立計画も立てられます。"
           tip="「作った！」をタップすると在庫が自動で減ります"
           onClose={() => { markTabGuideSeen('recipes'); setShowGuide(false); }}
         />

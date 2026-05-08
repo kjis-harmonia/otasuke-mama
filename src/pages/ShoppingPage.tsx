@@ -9,6 +9,7 @@ import { useCustomItems } from '../hooks/useCustomItems';
 import MiniGuide from '../components/MiniGuide';
 import ShoppingSetsPanel from '../components/ShoppingSetsPanel';
 import { isTabGuideSeen, markTabGuideSeen } from '../hooks/useGuide';
+import ItemIcon from '../components/ItemIcon';
 
 const ALL_QUICK_ITEMS = quickAddCategories.flatMap(cat => cat.items);
 
@@ -60,6 +61,11 @@ export default function ShoppingPage({ shopping, stock }: Props) {
   const handleAddToStock = (item: ShoppingItem) => {
     if (item.masterItemId) stock.addStockItem(item.masterItemId);
     shopping.remove(item.id);
+  };
+
+  const getItemIconProps = (item: ShoppingItem) => {
+    const ci = customItemsHook.visibleItems.find(c => c.name === item.name);
+    return { emoji: item.emoji, customIconData: ci?.customIconData, iconShape: ci?.iconShape };
   };
 
   const handleManualAdd = () => {
@@ -226,7 +232,7 @@ export default function ShoppingPage({ shopping, stock }: Props) {
                   }}
                   className="active:scale-95"
                 />
-                <span style={{ fontSize: '20px', flexShrink: 0 }}>{item.emoji}</span>
+                <ItemIcon {...getItemIconProps(item)} size={20} style={{ flexShrink: 0 }} />
                 <span style={{ flex: 1, fontSize: '15px', fontWeight: 500, color: '#2F2F3A' }}>{item.name}</span>
                 <button
                   onClick={() => shopping.remove(item.id)}
@@ -277,7 +283,7 @@ export default function ShoppingPage({ shopping, stock }: Props) {
                     >
                       ✓
                     </button>
-                    <span style={{ fontSize: '20px', flexShrink: 0 }}>{item.emoji}</span>
+                    <ItemIcon {...getItemIconProps(item)} size={20} style={{ flexShrink: 0 }} />
                     <span style={{ flex: 1, fontSize: '14px', color: '#A09890', textDecoration: 'line-through' }}>{item.name}</span>
                     <button
                       onClick={() => handleAddToStock(item)}
