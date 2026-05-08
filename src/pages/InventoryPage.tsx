@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { UseStockReturn } from '../hooks/useStock';
 import type { UseShoppingListReturn } from '../hooks/useShoppingList';
-import type { StockItem, StockStatus, FrozenItem, ExpiryType } from '../types';
+import type { StockItem, StockStatus, FrozenItem, ExpiryType, Location } from '../types';
 import { getExpiryInfo, isAlertExpiry } from '../utils/expiryUtils';
 import StatusBadge from '../components/StatusBadge';
 import MiniGuide from '../components/MiniGuide';
@@ -9,6 +9,39 @@ import { isTabGuideSeen, markTabGuideSeen } from '../hooks/useGuide';
 
 type StockTab = 'food' | 'daily' | 'baby' | 'frozen';
 type SortOrder = 'default' | 'expiry' | 'quantity';
+
+interface AddFormState {
+  name: string;
+  emoji: string;
+  quantity: number;
+  unit: string;
+  location: Location;
+}
+
+const FORM_DEFAULTS: Record<'food' | 'daily' | 'baby', AddFormState> = {
+  food:  { name: '', emoji: '🥦', quantity: 1, unit: '個', location: '冷蔵' },
+  daily: { name: '', emoji: '🧴', quantity: 1, unit: '個', location: '日用品棚' },
+  baby:  { name: '', emoji: '👶', quantity: 1, unit: '個', location: '子ども用品' },
+};
+
+const EMPTY_STATE: Record<'food' | 'daily' | 'baby' | 'frozen', { emoji: string; message: string; sub: string }> = {
+  food:   { emoji: '🥦', message: 'まだ食品が登録されていません',       sub: '買ったものや冷蔵庫にあるものを追加してみましょう' },
+  daily:  { emoji: '🧴', message: 'まだ日用品が登録されていません',     sub: '洗剤やティッシュなどを追加できます' },
+  baby:   { emoji: '👶', message: 'まだ子ども用品が登録されていません', sub: 'おむつやおしりふきなどを追加できます' },
+  frozen: { emoji: '❄️', message: 'まだ冷凍・作り置きが登録されていません', sub: '冷凍ごはんや作り置きを追加できます' },
+};
+
+const ADD_BUTTON_LABEL: Record<'food' | 'daily' | 'baby', string> = {
+  food:  '＋ 食品を追加',
+  daily: '＋ 日用品を追加',
+  baby:  '＋ 子ども用品を追加',
+};
+
+const ADD_BUTTON_STYLE: Record<'food' | 'daily' | 'baby', { bg: string; color: string; border: string }> = {
+  food:  { bg: '#D4F0E3', color: '#1A8A56', border: '#A9DCC4' },
+  daily: { bg: '#D8EEFF', color: '#1A507A', border: '#A8CFF0' },
+  baby:  { bg: '#FFE3F4', color: '#8B2252', border: '#FFB8D8' },
+};
 
 interface Props {
   stock: UseStockReturn;
@@ -300,6 +333,17 @@ function FrozenCard({ item, onQtyChange, onDelete }: {
   );
 }
 
+// ── 空状態 ───────────────────────────────────────────────────
+function EmptyState({ emoji, message, sub }: { emoji: string; message: string; sub: string }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '40px 16px 24px' }}>
+      <div style={{ fontSize: '48px', marginBottom: '12px', opacity: 0.4 }}>{emoji}</div>
+      <p style={{ fontSize: '15px', fontWeight: 700, color: '#A09890', marginBottom: '8px' }}>{message}</p>
+      <p style={{ fontSize: '13px', color: '#C0A898', lineHeight: 1.7 }}>{sub}</p>
+    </div>
+  );
+}
+
 // ── メインページ ─────────────────────────────────────────────
 export default function InventoryPage({ stock, shopping }: Props) {
   const [tab, setTab]       = useState<StockTab>('food');
@@ -307,6 +351,34 @@ export default function InventoryPage({ stock, shopping }: Props) {
   const [showAddFrozen, setShowAddFrozen] = useState(false);
   const [showGuide, setShowGuide] = useState(() => !isTabGuideSeen('inventory'));
   const [newFrozen, setNewFrozen] = useState({ name: '', emoji: '🍱', quantity: 1, unit: '個', memo: '' });
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addForm, setAddForm] = useState<AddFormState>(FORM_DEFAULTS.food);
+
+  const handleTabChange = (t: StockTab) => {
+    setTab(t);
+    setShowAddForm(false);
+    setShowAddFrozen(false);
+  };
+
+  const openAddForm = () => {
+    const cat = tab as 'food' | 'daily' | 'baby';
+    setAddForm(FORM_DEFAULTS[cat]);
+    setShowAddForm(true);
+  };
+
+  const handleAddStock = () => {
+    if (!addForm.name.trim()) return;
+    const cat = tab as 'food' | 'daily' | 'baby';
+    stock.addCustomStockItem({
+      name: addForm.name.trim(),
+      emoji: addForm.emoji || (cat === 'food' ? '🥦' : cat === 'daily' ? '🧴' : '👶'),
+      category: cat,
+      location: addForm.location,
+      unit: addForm.unit || '個',
+      quantity: cat === 'food' ? Math.max(1, addForm.quantity) : 1,
+    });
+    setShowAddForm(false);
+  };
 
   const foodItems  = stock.stock.filter(s => s.category === 'food');
   const dailyItems = stock.stock.filter(s => s.category === 'daily');
@@ -339,7 +411,7 @@ export default function InventoryPage({ stock, shopping }: Props) {
       {/* タブ */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '2px' }}>
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+          <button key={t.id} onClick={() => handleTabChange(t.id)}
             style={{ flexShrink: 0, padding: '7px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer', backgroundColor: tab === t.id ? '#F48A7A' : '#F0E8E4', color: tab === t.id ? '#fff' : '#8C7068', transition: 'all 0.15s' }}
             className="active:scale-95">
             {t.emoji} {t.label}
@@ -362,52 +434,185 @@ export default function InventoryPage({ stock, shopping }: Props) {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {tab === 'food' && sortedFood.map(item => (
-          <FoodCard
-            key={item.id}
-            item={item}
-            onQtyChange={d => stock.updateQuantity(item.id, d)}
-            onEmpty={() => stock.updateQuantity(item.id, -item.quantity)}
-            onAddToShopping={() => { if (item.masterItemId) shopping.addByMasterItemId(item.masterItemId); }}
-            onDelete={() => handleDelete(item.id, item.name)}
-            onUpdateExpiry={(date, type) => {
-              stock.updateStockItem(item.id, { expiryDate: date, expiryType: type });
-            }}
-          />
-        ))}
 
-        {tab === 'daily' && dailyItems.map(item => (
-          <DailyCard key={item.id} item={item}
-            onStatus={s => stock.setStatus(item.id, s)}
-            onAddToShopping={() => { if (item.masterItemId) shopping.addByMasterItemId(item.masterItemId); }}
-            onDelete={() => handleDelete(item.id, item.name)}
-          />
-        ))}
-
-        {tab === 'baby' && babyItems.map(item => (
-          <DailyCard key={item.id} item={item}
-            onStatus={s => stock.setStatus(item.id, s)}
-            onAddToShopping={() => { if (item.masterItemId) shopping.addByMasterItemId(item.masterItemId); }}
-            onDelete={() => handleDelete(item.id, item.name)}
-          />
-        ))}
-
-        {tab === 'frozen' && (
+        {/* ── 食品タブ ── */}
+        {tab === 'food' && (
           <>
-            {stock.frozenItems.map(item => (
-              <FrozenCard key={item.id} item={item}
-                onQtyChange={d => stock.updateFrozenQuantity(item.id, d)}
-                onDelete={() => handleDeleteFrozen(item.id, item.name)}
+            {/* 追加ボタン／フォーム（最上部に固定） */}
+            {!showAddForm ? (
+              <button
+                onClick={openAddForm}
+                style={{ width: '100%', minHeight: '48px', backgroundColor: ADD_BUTTON_STYLE.food.bg, color: ADD_BUTTON_STYLE.food.color, borderRadius: '16px', fontWeight: 700, fontSize: '15px', border: `1.5px solid ${ADD_BUTTON_STYLE.food.border}`, cursor: 'pointer' }}
+                className="active:scale-95 transition-transform"
+              >
+                {ADD_BUTTON_LABEL.food}
+              </button>
+            ) : (
+              <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: `1.5px solid ${ADD_BUTTON_STYLE.food.border}` }}>
+                <h3 style={{ fontWeight: 700, color: '#2F2F3A', marginBottom: '12px', fontSize: '15px' }}>食品を追加</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      style={{ ...inputStyle, width: '64px', textAlign: 'center', fontSize: '22px', padding: '8px 4px' }}
+                      value={addForm.emoji} maxLength={2}
+                      onChange={e => setAddForm(p => ({ ...p, emoji: e.target.value }))}
+                    />
+                    <input style={{ ...inputStyle, flex: 1 }} placeholder="名前（例：牛乳）" value={addForm.name} onChange={e => setAddForm(p => ({ ...p, name: e.target.value }))} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input type="number" style={{ ...inputStyle, flex: 1 }} placeholder="数量" value={addForm.quantity} min={1} onChange={e => setAddForm(p => ({ ...p, quantity: Number(e.target.value) }))} />
+                    <input style={{ ...inputStyle, flex: 1 }} placeholder="単位（個・本など）" value={addForm.unit} onChange={e => setAddForm(p => ({ ...p, unit: e.target.value }))} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {(['冷蔵', '常温'] as Location[]).map(loc => (
+                      <button key={loc} onClick={() => setAddForm(p => ({ ...p, location: loc }))}
+                        style={{ flex: 1, padding: '8px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer', backgroundColor: addForm.location === loc ? '#A9DCC4' : '#F0E8E4', color: addForm.location === loc ? '#0F5C3A' : '#8C7068' }}
+                      >{loc}</button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                    <button onClick={handleAddStock} disabled={!addForm.name.trim()}
+                      style={{ flex: 1, minHeight: '48px', backgroundColor: addForm.name.trim() ? '#A9DCC4' : '#F0E8E4', color: addForm.name.trim() ? '#0F5C3A' : '#C0A898', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: addForm.name.trim() ? 'pointer' : 'default' }}
+                      className="active:scale-95">追加する</button>
+                    <button onClick={() => setShowAddForm(false)}
+                      style={{ flex: 1, minHeight: '48px', backgroundColor: '#F0E8E4', color: '#8C7068', borderRadius: '12px', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer' }}
+                      className="active:scale-95">キャンセル</button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* 空状態 */}
+            {sortedFood.length === 0 && !showAddForm && (
+              <EmptyState {...EMPTY_STATE.food} />
+            )}
+            {/* アイテム一覧 */}
+            {sortedFood.map(item => (
+              <FoodCard
+                key={item.id}
+                item={item}
+                onQtyChange={d => stock.updateQuantity(item.id, d)}
+                onEmpty={() => stock.updateQuantity(item.id, -item.quantity)}
+                onAddToShopping={() => { if (item.masterItemId) shopping.addByMasterItemId(item.masterItemId); }}
+                onDelete={() => handleDelete(item.id, item.name)}
+                onUpdateExpiry={(date, type) => {
+                  stock.updateStockItem(item.id, { expiryDate: date, expiryType: type });
+                }}
               />
             ))}
+          </>
+        )}
 
-            <button onClick={() => setShowAddFrozen(true)}
-              style={{ width: '100%', minHeight: '48px', backgroundColor: '#C0E8FF', color: '#1A70A0', borderRadius: '16px', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer' }}
-              className="active:scale-95 transition-transform">
-              ＋ 冷凍・作り置きを追加
-            </button>
+        {/* ── 日用品タブ ── */}
+        {tab === 'daily' && (
+          <>
+            {/* 追加ボタン／フォーム（最上部に固定） */}
+            {!showAddForm ? (
+              <button
+                onClick={openAddForm}
+                style={{ width: '100%', minHeight: '48px', backgroundColor: ADD_BUTTON_STYLE.daily.bg, color: ADD_BUTTON_STYLE.daily.color, borderRadius: '16px', fontWeight: 700, fontSize: '15px', border: `1.5px solid ${ADD_BUTTON_STYLE.daily.border}`, cursor: 'pointer' }}
+                className="active:scale-95 transition-transform"
+              >
+                {ADD_BUTTON_LABEL.daily}
+              </button>
+            ) : (
+              <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: `1.5px solid ${ADD_BUTTON_STYLE.daily.border}` }}>
+                <h3 style={{ fontWeight: 700, color: '#2F2F3A', marginBottom: '12px', fontSize: '15px' }}>日用品を追加</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      style={{ ...inputStyle, width: '64px', textAlign: 'center', fontSize: '22px', padding: '8px 4px' }}
+                      value={addForm.emoji} maxLength={2}
+                      onChange={e => setAddForm(p => ({ ...p, emoji: e.target.value }))}
+                    />
+                    <input style={{ ...inputStyle, flex: 1 }} placeholder="名前（例：洗剤）" value={addForm.name} onChange={e => setAddForm(p => ({ ...p, name: e.target.value }))} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                    <button onClick={handleAddStock} disabled={!addForm.name.trim()}
+                      style={{ flex: 1, minHeight: '48px', backgroundColor: addForm.name.trim() ? '#A8CFF0' : '#F0E8E4', color: addForm.name.trim() ? '#1A507A' : '#C0A898', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: addForm.name.trim() ? 'pointer' : 'default' }}
+                      className="active:scale-95">追加する</button>
+                    <button onClick={() => setShowAddForm(false)}
+                      style={{ flex: 1, minHeight: '48px', backgroundColor: '#F0E8E4', color: '#8C7068', borderRadius: '12px', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer' }}
+                      className="active:scale-95">キャンセル</button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* 空状態 */}
+            {dailyItems.length === 0 && !showAddForm && (
+              <EmptyState {...EMPTY_STATE.daily} />
+            )}
+            {/* アイテム一覧 */}
+            {dailyItems.map(item => (
+              <DailyCard key={item.id} item={item}
+                onStatus={s => stock.setStatus(item.id, s)}
+                onAddToShopping={() => { if (item.masterItemId) shopping.addByMasterItemId(item.masterItemId); }}
+                onDelete={() => handleDelete(item.id, item.name)}
+              />
+            ))}
+          </>
+        )}
 
-            {showAddFrozen && (
+        {/* ── 子どもタブ ── */}
+        {tab === 'baby' && (
+          <>
+            {/* 追加ボタン／フォーム（最上部に固定） */}
+            {!showAddForm ? (
+              <button
+                onClick={openAddForm}
+                style={{ width: '100%', minHeight: '48px', backgroundColor: ADD_BUTTON_STYLE.baby.bg, color: ADD_BUTTON_STYLE.baby.color, borderRadius: '16px', fontWeight: 700, fontSize: '15px', border: `1.5px solid ${ADD_BUTTON_STYLE.baby.border}`, cursor: 'pointer' }}
+                className="active:scale-95 transition-transform"
+              >
+                {ADD_BUTTON_LABEL.baby}
+              </button>
+            ) : (
+              <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: `1.5px solid ${ADD_BUTTON_STYLE.baby.border}` }}>
+                <h3 style={{ fontWeight: 700, color: '#2F2F3A', marginBottom: '12px', fontSize: '15px' }}>子ども用品を追加</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      style={{ ...inputStyle, width: '64px', textAlign: 'center', fontSize: '22px', padding: '8px 4px' }}
+                      value={addForm.emoji} maxLength={2}
+                      onChange={e => setAddForm(p => ({ ...p, emoji: e.target.value }))}
+                    />
+                    <input style={{ ...inputStyle, flex: 1 }} placeholder="名前（例：おむつ）" value={addForm.name} onChange={e => setAddForm(p => ({ ...p, name: e.target.value }))} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                    <button onClick={handleAddStock} disabled={!addForm.name.trim()}
+                      style={{ flex: 1, minHeight: '48px', backgroundColor: addForm.name.trim() ? '#FFB8D8' : '#F0E8E4', color: addForm.name.trim() ? '#8B2252' : '#C0A898', borderRadius: '12px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: addForm.name.trim() ? 'pointer' : 'default' }}
+                      className="active:scale-95">追加する</button>
+                    <button onClick={() => setShowAddForm(false)}
+                      style={{ flex: 1, minHeight: '48px', backgroundColor: '#F0E8E4', color: '#8C7068', borderRadius: '12px', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer' }}
+                      className="active:scale-95">キャンセル</button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* 空状態 */}
+            {babyItems.length === 0 && !showAddForm && (
+              <EmptyState {...EMPTY_STATE.baby} />
+            )}
+            {/* アイテム一覧 */}
+            {babyItems.map(item => (
+              <DailyCard key={item.id} item={item}
+                onStatus={s => stock.setStatus(item.id, s)}
+                onAddToShopping={() => { if (item.masterItemId) shopping.addByMasterItemId(item.masterItemId); }}
+                onDelete={() => handleDelete(item.id, item.name)}
+              />
+            ))}
+          </>
+        )}
+
+        {/* ── 冷凍タブ ── */}
+        {tab === 'frozen' && (
+          <>
+            {/* 追加ボタン／フォーム（最上部に固定） */}
+            {!showAddFrozen ? (
+              <button onClick={() => setShowAddFrozen(true)}
+                style={{ width: '100%', minHeight: '48px', backgroundColor: '#C0E8FF', color: '#1A70A0', borderRadius: '16px', fontWeight: 700, fontSize: '15px', border: '1.5px solid #A0D4F0', cursor: 'pointer' }}
+                className="active:scale-95 transition-transform">
+                ＋ 冷凍・作り置きを追加
+              </button>
+            ) : (
               <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1.5px solid #C0E8FF' }}>
                 <h3 style={{ fontWeight: 700, color: '#2F2F3A', marginBottom: '12px', fontSize: '15px' }}>冷凍・作り置きを追加</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -434,6 +639,17 @@ export default function InventoryPage({ stock, shopping }: Props) {
                 </div>
               </div>
             )}
+            {/* 空状態 */}
+            {stock.frozenItems.length === 0 && !showAddFrozen && (
+              <EmptyState {...EMPTY_STATE.frozen} />
+            )}
+            {/* アイテム一覧 */}
+            {stock.frozenItems.map(item => (
+              <FrozenCard key={item.id} item={item}
+                onQtyChange={d => stock.updateFrozenQuantity(item.id, d)}
+                onDelete={() => handleDeleteFrozen(item.id, item.name)}
+              />
+            ))}
           </>
         )}
       </div>

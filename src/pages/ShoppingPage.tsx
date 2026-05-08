@@ -7,6 +7,7 @@ import { useFamilySettings } from '../hooks/useFamilySettings';
 import { quickAddCategories } from '../data/quickAddCategories';
 import { useCustomItems } from '../hooks/useCustomItems';
 import MiniGuide from '../components/MiniGuide';
+import ShoppingSetsPanel from '../components/ShoppingSetsPanel';
 import { isTabGuideSeen, markTabGuideSeen } from '../hooks/useGuide';
 
 const ALL_QUICK_ITEMS = quickAddCategories.flatMap(cat => cat.items);
@@ -171,7 +172,10 @@ export default function ShoppingPage({ shopping, stock }: Props) {
         </div>
       </div>
 
-      {/* ─── セクション2：今日の買い物リスト ─── */}
+      {/* ─── セクション2：よく買うものセット ─── */}
+      <ShoppingSetsPanel shopping={shopping} />
+
+      {/* ─── セクション3：今日の買い物リスト ─── */}
       <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <h2 style={{ fontWeight: 700, color: '#2F2F3A', fontSize: '15px', margin: 0 }}>

@@ -1,5 +1,5 @@
 import { useLocalStorage } from './useLocalStorage';
-import type { StockItem, FrozenItem, StockStatus } from '../types';
+import type { StockItem, FrozenItem, StockStatus, ItemCategory, Location } from '../types';
 import { initialStock } from '../data/initialStock';
 import { getMasterItem } from '../data/masterItems';
 import { calcStockStatus } from '../utils/stockUtils';
@@ -61,6 +61,31 @@ export function useStock() {
     setStock(prev => [...prev, newItem]);
   };
 
+  const addCustomStockItem = (item: {
+    name: string;
+    emoji: string;
+    category: ItemCategory;
+    location: Location;
+    unit: string;
+    quantity?: number;
+    subCategory?: string;
+  }) => {
+    const newItem: StockItem = {
+      id: genId(),
+      name: item.name,
+      emoji: item.emoji,
+      category: item.category,
+      subCategory: item.subCategory ?? '',
+      quantity: item.quantity ?? 1,
+      unit: item.unit,
+      stockStatus: 'enough',
+      location: item.location,
+      memo: '',
+      lastUpdatedAt: '2026-05-07',
+    };
+    setStock(prev => [...prev, newItem]);
+  };
+
   const deleteStockItem = (id: string) => {
     setStock(prev => prev.filter(i => i.id !== id));
   };
@@ -104,6 +129,7 @@ export function useStock() {
     updateQuantity,
     setStatus,
     addStockItem,
+    addCustomStockItem,
     deleteStockItem,
     updateStockItem,
     decrementByMasterItemId,

@@ -26,7 +26,7 @@ export interface MasterItem {
 // ─── 在庫アイテム ──────────────────────────────────────────
 export interface StockItem {
   id: string;
-  masterItemId: string;
+  masterItemId?: string;
   name: string;
   emoji: string;
   category: ItemCategory;
@@ -194,6 +194,32 @@ export interface Substitution {
   originalId: string;
   substituteIds: string[];
   note: string;
+}
+
+// ─── よく買うものセット ───────────────────────────────────────
+export interface ShoppingSetItem {
+  masterItemId?: string;
+  name: string;
+  emoji: string;
+  category: ItemCategory;
+}
+
+export interface ShoppingSet {
+  id: string;
+  name: string;
+  emoji: string;
+  items: ShoppingSetItem[];
+  createdAt: string;
+}
+
+// ─── 通知設定 ─────────────────────────────────────────────────
+export interface NotificationPrefs {
+  expiryAlert: boolean;
+  expiryDaysBefore: 1 | 3 | 7;
+  shoppingReminder: boolean;
+  shoppingReminderDay: number; // 0=Sun, 1=Mon … 6=Sat
+  weeklyBudgetReview: boolean;
+  recipeReminder: boolean;
 }
 
 // ─── アプリ全体 ───────────────────────────────────────────

@@ -4,6 +4,7 @@ import { useFamilySettings } from '../hooks/useFamilySettings';
 import { useHiddenItems } from '../hooks/useHiddenItems';
 import { useCustomItems } from '../hooks/useCustomItems';
 import { useGuide } from '../hooks/useGuide';
+import { useNotificationPrefs } from '../hooks/useNotificationPrefs';
 import { masterItems } from '../data/masterItems';
 import type { EatingTendency, TastePreference } from '../types';
 import Card from '../components/Card';
@@ -63,6 +64,7 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
   const { hidden, restoreItem, restoreAll } = useHiddenItems();
   const customItems = useCustomItems();
   const guide = useGuide();
+  const { prefs, updatePrefs } = useNotificationPrefs();
 
   const handleCountChange = (field: 'adults' | 'children' | 'toddlers', delta: number) => {
     const current = familySettings[field];
@@ -236,13 +238,70 @@ export default function SettingsPage({ budget, onReset, onResetSetup }: Props) {
         </div>
       </Card>
 
+      {/* 通知設定 */}
+      <Card>
+        <h2 className="font-bold text-gray-800 text-base mb-1">🔔 通知設定</h2>
+        <p className="text-xs text-gray-400 mb-3">アプリ化後に自動で通知が届くようになります</p>
+        <div className="space-y-3">
+          {([
+            { key: 'expiryAlert',       label: '賞味期限アラート',     desc: '期限が近い食材をお知らせ' },
+            { key: 'shoppingReminder',  label: '買い物リストリマインダー', desc: 'リストがある日にお知らせ' },
+            { key: 'weeklyBudgetReview',label: '週次予算サマリー',       desc: '毎週月曜に先週の集計を通知' },
+            { key: 'recipeReminder',    label: '献立リマインダー',       desc: '夕方に「今日のメニュー」を提案' },
+          ] as { key: keyof typeof prefs; label: string; desc: string }[]).map(item => (
+            <div key={item.key} className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700">{item.label}</p>
+                <p className="text-xs text-gray-400">{item.desc}</p>
+              </div>
+              <button
+                onClick={() => updatePrefs({ [item.key]: !prefs[item.key] })}
+                style={{
+                  width: '44px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
+                  backgroundColor: prefs[item.key] ? '#F48A7A' : '#D1D5DB',
+                  position: 'relative', transition: 'background-color 0.2s', flexShrink: 0,
+                }}
+              >
+                <span style={{
+                  position: 'absolute', top: '3px', width: '20px', height: '20px',
+                  borderRadius: '50%', backgroundColor: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  transition: 'left 0.2s',
+                  left: prefs[item.key] ? '21px' : '3px',
+                }} />
+              </button>
+            </div>
+          ))}
+          {prefs.expiryAlert && (
+            <div className="pt-2 border-t border-gray-100">
+              <p className="text-xs text-gray-500 mb-2">何日前から通知しますか？</p>
+              <div className="flex gap-2">
+                {([1, 3, 7] as (1 | 3 | 7)[]).map(d => (
+                  <button
+                    key={d}
+                    onClick={() => updatePrefs({ expiryDaysBefore: d })}
+                    className="flex-1 py-2 rounded-xl text-sm font-medium"
+                    style={
+                      prefs.expiryDaysBefore === d
+                        ? { backgroundColor: '#F48A7A', color: '#fff' }
+                        : { backgroundColor: '#F3F4F6', color: '#6B7280' }
+                    }
+                  >
+                    {d}日前
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+
       {/* アプリについて */}
       <Card>
         <h2 className="font-bold text-gray-800 text-base mb-3">📱 アプリについて</h2>
         <div className="space-y-2 text-sm text-gray-500">
           <div className="flex items-center justify-between">
             <span>バージョン</span>
-            <span className="font-bold text-gray-700">v0.5.0</span>
+            <span className="font-bold text-gray-700">v0.6.0</span>
           </div>
           <div className="flex items-center justify-between">
             <span>データ保存先</span>

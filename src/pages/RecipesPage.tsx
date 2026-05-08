@@ -17,7 +17,7 @@ interface Props {
   expiryTabTrigger?: number;
 }
 
-type RecipeTab = 'can_cook' | 'one_more' | 'two_more' | 'savings' | 'expiry';
+type RecipeTab = 'can_cook' | 'one_more' | 'two_more' | 'savings' | 'expiry' | 'my_recipes';
 
 const portionFeedbackOptions: { value: PortionFeedback; label: string }[] = [
   { value: 'much_less',     label: 'かなり少なかった' },
@@ -304,18 +304,25 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
   };
 
   const tabs: { id: RecipeTab; label: string; emoji: string; count: number }[] = [
-    { id: 'can_cook', label: '今作れる',    emoji: '✅', count: recipes.canCook.length },
-    { id: 'one_more', label: 'あと1品',     emoji: '🛒', count: recipes.oneMissing.length },
-    { id: 'two_more', label: 'あと2品',     emoji: '📋', count: recipes.twoMissing.length },
-    { id: 'savings',  label: '節約メニュー', emoji: '💰', count: recipes.savingsMenu.length },
-    { id: 'expiry',   label: '期限近い',     emoji: '⏰', count: expiryMatches.length },
+    { id: 'can_cook',    label: '今作れる',    emoji: '✅', count: recipes.canCook.length },
+    { id: 'one_more',    label: 'あと1品',     emoji: '🛒', count: recipes.oneMissing.length },
+    { id: 'two_more',    label: 'あと2品',     emoji: '📋', count: recipes.twoMissing.length },
+    { id: 'savings',     label: '節約メニュー', emoji: '💰', count: recipes.savingsMenu.length },
+    { id: 'expiry',      label: '期限近い',     emoji: '⏰', count: expiryMatches.length },
+    { id: 'my_recipes',  label: 'わが家',       emoji: '🏠', count: recipes.customRecipes.length },
   ];
 
+  const myRecipesMatches: RecipeMatch[] = recipes.customRecipes.map(recipe => {
+    const found = [...recipes.canCook, ...recipes.oneMissing, ...recipes.twoMissing].find(m => m.recipe.id === recipe.id);
+    return found ?? { recipe, status: 'can_cook', missing: [], usesLowStock: false, usesFridge: false };
+  });
+
   const displayMatches =
-    activeTab === 'can_cook' ? recipes.canCook :
-    activeTab === 'one_more' ? recipes.oneMissing :
-    activeTab === 'two_more' ? recipes.twoMissing :
-    activeTab === 'savings'  ? recipes.savingsMenu :
+    activeTab === 'can_cook'   ? recipes.canCook :
+    activeTab === 'one_more'   ? recipes.oneMissing :
+    activeTab === 'two_more'   ? recipes.twoMissing :
+    activeTab === 'savings'    ? recipes.savingsMenu :
+    activeTab === 'my_recipes' ? myRecipesMatches :
     expiryMatches;
 
   return (
@@ -438,14 +445,18 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
         <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '32px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', textAlign: 'center' }}>
           <p style={{ fontSize: '28px', marginBottom: '8px' }}>🤔</p>
           <p style={{ color: '#A09890', fontSize: '14px' }}>
-            {activeTab === 'can_cook' && '今すぐ作れるレシピがありません'}
-            {activeTab === 'one_more' && 'あと1品で作れるレシピがありません'}
-            {activeTab === 'two_more' && 'あと2品で作れるレシピがありません'}
-            {activeTab === 'savings'  && '節約メニューがありません'}
-            {activeTab === 'expiry'   && '期限が近い食材を使ったレシピがありません'}
+            {activeTab === 'can_cook'   && '今すぐ作れるレシピがありません'}
+            {activeTab === 'one_more'   && 'あと1品で作れるレシピがありません'}
+            {activeTab === 'two_more'   && 'あと2品で作れるレシピがありません'}
+            {activeTab === 'savings'    && '節約メニューがありません'}
+            {activeTab === 'expiry'     && '期限が近い食材を使ったレシピがありません'}
+            {activeTab === 'my_recipes' && 'うちのレシピがまだありません'}
           </p>
           {activeTab === 'can_cook' && (
             <p style={{ fontSize: '12px', color: '#C0A898', marginTop: '4px' }}>在庫を増やすと提案が増えます</p>
+          )}
+          {activeTab === 'my_recipes' && (
+            <p style={{ fontSize: '12px', color: '#C0A898', marginTop: '4px' }}>右上の「＋ うちのレシピ」から登録しましょう</p>
           )}
         </div>
       ) : (
