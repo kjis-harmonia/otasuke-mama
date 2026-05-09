@@ -202,7 +202,14 @@ export default function ShoppingPage({ shopping, stock }: Props) {
         {shopping.list.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '20px 0', color: '#B0A098', fontSize: '14px' }}>
             <div style={{ fontSize: '32px', marginBottom: '8px' }}>🛒</div>
-            上のグリッドからタップして追加してください
+            <p style={{ margin: '0 0 12px' }}>上のグリッドからタップして追加してください</p>
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              style={{ width: '100%', minHeight: '44px', borderRadius: '12px', border: 'none', backgroundColor: '#FFE3D5', color: '#B85A28', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+              className="active:scale-95"
+            >
+              よく買うものから追加
+            </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

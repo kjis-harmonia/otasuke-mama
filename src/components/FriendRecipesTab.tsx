@@ -53,6 +53,7 @@ interface Props {
   friendRecipes: UseFriendRecipesReturn;
   mealPlan: UseMealPlanReturn;
   shopping: UseShoppingListReturn;
+  onOpenMamunity: () => void;
 }
 
 function getTodayStr(): string {
@@ -203,7 +204,7 @@ function RecipeCard({
   );
 }
 
-export default function FriendRecipesTab({ friendRecipes, mealPlan, shopping }: Props) {
+export default function FriendRecipesTab({ friendRecipes, mealPlan, shopping, onOpenMamunity }: Props) {
   const todayStr = getTodayStr();
   const weekDays = getWeekDays();
   const [activeFilter, setActiveFilter] = useState<FilterChip>('all');
@@ -256,6 +257,13 @@ export default function FriendRecipesTab({ friendRecipes, mealPlan, shopping }: 
           <p style={{ fontSize: '28px', marginBottom: '8px' }}>👩‍🍳</p>
           <p style={{ color: '#A09890', fontSize: '14px' }}>まだ保存したレシピがありません</p>
           <p style={{ fontSize: '12px', color: '#C0A898', marginTop: '4px' }}>ママニティから「ママ友レシピに保存」してみましょう</p>
+          <button
+            onClick={onOpenMamunity}
+            style={{ marginTop: '16px', width: '100%', minHeight: '44px', borderRadius: '12px', border: 'none', backgroundColor: '#EAF4FF', color: '#1A507A', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+            className="active:scale-95"
+          >
+            ママニティから保存
+          </button>
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '24px 16px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { TabName } from '../App';
 import type { UseStockReturn } from '../hooks/useStock';
 import type { UseShoppingListReturn } from '../hooks/useShoppingList';
 import type { StockItem, StockStatus, FrozenItem, ExpiryType } from '../types';
@@ -12,7 +13,7 @@ type StockTab = 'food' | 'daily' | 'baby' | 'frozen';
 type SortOrder = 'default' | 'expiry' | 'quantity';
 
 const EMPTY_STATE: Record<StockTab, { emoji: string; message: string; sub: string }> = {
-  food:   { emoji: '🥦', message: 'まだ食品が登録されていません',       sub: '買ったものや冷蔵庫にあるものを追加してみましょう' },
+  food:   { emoji: '🥦', message: 'まだ食品が登録されていません',       sub: 'よく買うものから追加するとラクです' },
   daily:  { emoji: '🧴', message: 'まだ日用品が登録されていません',     sub: '洗剤やティッシュなどを追加できます' },
   baby:   { emoji: '👶', message: 'まだ子ども用品が登録されていません', sub: 'おむつやおしりふきなどを追加できます' },
   frozen: { emoji: '❄️', message: 'まだ冷凍・作り置きが登録されていません', sub: '冷凍ごはんや作り置きを追加できます' },
@@ -35,6 +36,7 @@ const ADD_BUTTON_STYLE: Record<StockTab, { bg: string; color: string; border: st
 interface Props {
   stock: UseStockReturn;
   shopping: UseShoppingListReturn;
+  onTabChange: (tab: TabName) => void;
 }
 
 function cardStyle(item: StockItem): { bg: string; stripColor: string } {
@@ -323,18 +325,60 @@ function FrozenCard({ item, onQtyChange, onDelete }: {
 }
 
 // ── 空状態 ───────────────────────────────────────────────────
-function EmptyState({ emoji, message, sub }: { emoji: string; message: string; sub: string }) {
+function EmptyState({
+  emoji,
+  message,
+  sub,
+  tab,
+  onAdd,
+  onShopping,
+}: {
+  emoji: string;
+  message: string;
+  sub: string;
+  tab: StockTab;
+  onAdd: () => void;
+  onShopping: () => void;
+}) {
+  const addLabel: Record<StockTab, string> = {
+    food: '食品を追加',
+    daily: '日用品を追加',
+    baby: '子ども用品を追加',
+    frozen: '冷凍・作り置きを追加',
+  };
+
   return (
     <div style={{ textAlign: 'center', padding: '40px 16px 24px' }}>
       <div style={{ fontSize: '48px', marginBottom: '12px', opacity: 0.4 }}>{emoji}</div>
       <p style={{ fontSize: '15px', fontWeight: 700, color: '#A09890', marginBottom: '8px' }}>{message}</p>
       <p style={{ fontSize: '13px', color: '#C0A898', lineHeight: 1.7 }}>{sub}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginTop: '18px' }}>
+        <button onClick={onAdd}
+          style={{ minHeight: '44px', borderRadius: '12px', border: 'none', backgroundColor: ADD_BUTTON_STYLE[tab].bg, color: ADD_BUTTON_STYLE[tab].color, fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+          className="active:scale-95">
+          {addLabel[tab]}
+        </button>
+        {tab !== 'frozen' && (
+          <button onClick={onShopping}
+            style={{ minHeight: '44px', borderRadius: '12px', border: 'none', backgroundColor: '#FFE3D5', color: '#B85A28', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+            className="active:scale-95">
+            買い物リストへ
+          </button>
+        )}
+        {tab === 'food' && (
+          <button onClick={onAdd}
+            style={{ minHeight: '44px', borderRadius: '12px', border: 'none', backgroundColor: '#F0E8E4', color: '#8C7068', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+            className="active:scale-95">
+            よく買うものを見る
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 // ── メインページ ─────────────────────────────────────────────
-export default function InventoryPage({ stock, shopping }: Props) {
+export default function InventoryPage({ stock, shopping, onTabChange }: Props) {
   const [tab, setTab]       = useState<StockTab>('food');
   const [sort, setSort]     = useState<SortOrder>('default');
   const [showGuide, setShowGuide] = useState(() => !isTabGuideSeen('inventory'));
@@ -417,7 +461,7 @@ export default function InventoryPage({ stock, shopping }: Props) {
         {/* ── 食品タブ ── */}
         {tab === 'food' && (
           <>
-            {sortedFood.length === 0 && !showAddForm && <EmptyState {...EMPTY_STATE.food} />}
+            {sortedFood.length === 0 && !showAddForm && <EmptyState {...EMPTY_STATE.food} tab="food" onAdd={openAddForm} onShopping={() => onTabChange('shopping')} />}
             {sortedFood.map(item => (
               <FoodCard
                 key={item.id}
@@ -435,7 +479,7 @@ export default function InventoryPage({ stock, shopping }: Props) {
         {/* ── 日用品タブ ── */}
         {tab === 'daily' && (
           <>
-            {dailyItems.length === 0 && !showAddForm && <EmptyState {...EMPTY_STATE.daily} />}
+            {dailyItems.length === 0 && !showAddForm && <EmptyState {...EMPTY_STATE.daily} tab="daily" onAdd={openAddForm} onShopping={() => onTabChange('shopping')} />}
             {dailyItems.map(item => (
               <DailyCard key={item.id} item={item}
                 onStatus={s => stock.setStatus(item.id, s)}
@@ -449,7 +493,7 @@ export default function InventoryPage({ stock, shopping }: Props) {
         {/* ── 子どもタブ ── */}
         {tab === 'baby' && (
           <>
-            {babyItems.length === 0 && !showAddForm && <EmptyState {...EMPTY_STATE.baby} />}
+            {babyItems.length === 0 && !showAddForm && <EmptyState {...EMPTY_STATE.baby} tab="baby" onAdd={openAddForm} onShopping={() => onTabChange('shopping')} />}
             {babyItems.map(item => (
               <DailyCard key={item.id} item={item}
                 onStatus={s => stock.setStatus(item.id, s)}
@@ -463,7 +507,7 @@ export default function InventoryPage({ stock, shopping }: Props) {
         {/* ── 冷凍タブ ── */}
         {tab === 'frozen' && (
           <>
-            {stock.frozenItems.length === 0 && !showAddForm && <EmptyState {...EMPTY_STATE.frozen} />}
+            {stock.frozenItems.length === 0 && !showAddForm && <EmptyState {...EMPTY_STATE.frozen} tab="frozen" onAdd={openAddForm} onShopping={() => onTabChange('shopping')} />}
             {stock.frozenItems.map(item => (
               <FrozenCard key={item.id} item={item}
                 onQtyChange={d => stock.updateFrozenQuantity(item.id, d)}

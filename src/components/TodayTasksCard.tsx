@@ -25,6 +25,9 @@ interface TaskItem {
 
 export default function TodayTasksCard({ stock, shopping, budget, recipes, onTabChange, onNavigateToExpiryRecipes }: Props) {
   const tasks: TaskItem[] = [];
+  const foodItems = stock.stock.filter(s => s.category === 'food');
+  const lowStockItems = stock.stock.filter(s => s.stockStatus === 'low' || s.stockStatus === 'empty');
+  const isStockTooSmall = stock.stock.length === 0 || foodItems.length <= 2;
 
   // Priority 1: expiry alerts
   const expiringItems = stock.stock
@@ -49,49 +52,65 @@ export default function TodayTasksCard({ stock, shopping, budget, recipes, onTab
     tasks.push({
       id: 'shopping',
       emoji: '🛒',
-      text: `買い物リストに${shopping.uncheckedItems.length}件あります`,
+      text: '買い物リストに未完了の商品があります',
       ctaLabel: 'リストを見る',
       ctaColor: '#B85A28',
       onCta: () => onTabChange('shopping'),
     });
   }
 
-  // Priority 3: budget
-  if (budget.remaining < 0) {
+  // Priority 3: empty or very small stock
+  if (isStockTooSmall) {
     tasks.push({
-      id: 'budget-over',
-      emoji: '⚠️',
-      text: `今週の予算を¥${Math.abs(budget.remaining).toLocaleString()}オーバー`,
-      ctaLabel: '家計を確認',
-      ctaColor: '#B91C1C',
-      onCta: () => onTabChange('budget'),
+      id: 'stock-empty',
+      emoji: '📦',
+      text: stock.stock.length === 0
+        ? '在庫がまだありません。よく買うものから追加してみましょう'
+        : '在庫が少なめです。よく使うものを追加しておきましょう',
+      ctaLabel: '在庫を追加',
+      ctaColor: '#1A7A46',
+      onCta: () => onTabChange('inventory'),
     });
-  } else if (budget.weekTotal === 0) {
+  }
+
+  // Priority 4: no recipes currently cookable
+  if (recipes.canCook.length === 0) {
+    tasks.push({
+      id: 'no-recipe',
+      emoji: '🍳',
+      text: '今作れるメニューはまだありません。あと1品で作れる料理を見てみましょう',
+      ctaLabel: '献立を見る',
+      ctaColor: '#1A507A',
+      onCta: () => onTabChange('recipes'),
+    });
+  }
+
+  // Priority 5: expenses not recorded
+  if (budget.weekTotal === 0) {
     tasks.push({
       id: 'budget',
       emoji: '💰',
-      text: '今週の支出をまだ記録していません',
+      text: '今週の支出を記録すると、残り予算が分かります',
       ctaLabel: '記録する',
       ctaColor: '#92500E',
       onCta: () => onTabChange('budget'),
     });
   }
 
-  // Priority 4: recipe suggestion
-  if (recipes.canCook.length > 0 && tasks.length < 3) {
-    const top = recipes.canCook[0];
+  // Priority 6: weekly budget status
+  if (budget.weekTotal > 0) {
     tasks.push({
-      id: 'recipe',
-      emoji: top.recipe.emoji,
-      text: `${top.recipe.name}が今すぐ作れます`,
-      ctaLabel: 'レシピを見る',
-      ctaColor: '#1A507A',
-      onCta: () => onTabChange('recipes'),
+      id: budget.remaining < 0 ? 'budget-over' : 'budget-status',
+      emoji: budget.remaining < 0 ? '⚠️' : '💰',
+      text: budget.remaining < 0
+        ? `今週の予算を¥${Math.abs(budget.remaining).toLocaleString()}オーバーしています`
+        : `今週はあと¥${budget.remaining.toLocaleString()}使えます`,
+      ctaLabel: '家計を確認',
+      ctaColor: budget.remaining < 0 ? '#B91C1C' : '#92500E',
+      onCta: () => onTabChange('budget'),
     });
   }
 
-  // Priority 5: low stock warning
-  const lowStockItems = stock.stock.filter(s => s.stockStatus === 'low' || s.stockStatus === 'empty');
   if (lowStockItems.length > 0 && tasks.length < 3) {
     tasks.push({
       id: 'lowstock',

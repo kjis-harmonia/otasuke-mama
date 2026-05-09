@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { TabName } from '../App';
 import type { UseRecipesReturn } from '../hooks/useRecipes';
 import type { UseShoppingListReturn } from '../hooks/useShoppingList';
 import type { UseStockReturn } from '../hooks/useStock';
@@ -19,6 +20,7 @@ interface Props {
   recipes: UseRecipesReturn;
   shopping: UseShoppingListReturn;
   stock: UseStockReturn;
+  onTabChange: (tab: TabName) => void;
   expiryTabTrigger?: number;
 }
 
@@ -238,7 +240,7 @@ function RecipeCard({ match, onCook, onDelete, onAddMissingToShopping }: {
   );
 }
 
-export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger }: Props) {
+export default function RecipesPage({ recipes, shopping, stock, onTabChange, expiryTabTrigger }: Props) {
   const [mealPageTab, setMealPageTab] = useState<MealPageTab>('today');
   const [activeTab, setActiveTab] = useState<RecipeTab>('can_cook');
   const [showGuide, setShowGuide] = useState(() => !isTabGuideSeen('recipes'));
@@ -440,6 +442,30 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
               {activeTab === 'can_cook' && (
                 <p style={{ fontSize: '12px', color: '#C0A898', marginTop: '4px' }}>在庫を増やすと提案が増えます</p>
               )}
+              {activeTab === 'can_cook' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginTop: '18px' }}>
+                  <button onClick={() => setActiveTab('one_more')}
+                    style={{ minHeight: '44px', borderRadius: '12px', border: 'none', backgroundColor: '#FFE3D5', color: '#B85A28', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                    className="active:scale-95">
+                    あと1品で作れる料理を見る
+                  </button>
+                  <button onClick={() => onTabChange('inventory')}
+                    style={{ minHeight: '44px', borderRadius: '12px', border: 'none', backgroundColor: '#D4F0E3', color: '#1A7A46', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                    className="active:scale-95">
+                    在庫を追加する
+                  </button>
+                  <button onClick={() => setMealPageTab('mamunity')}
+                    style={{ minHeight: '44px', borderRadius: '12px', border: 'none', backgroundColor: '#EAF4FF', color: '#1A507A', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                    className="active:scale-95">
+                    ママニティで献立アイデアを見る
+                  </button>
+                  <button onClick={() => onTabChange('shopping')}
+                    style={{ minHeight: '44px', borderRadius: '12px', border: 'none', backgroundColor: '#F0E8E4', color: '#8C7068', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                    className="active:scale-95">
+                    買い物リストへ行く
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -471,7 +497,7 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
 
       {/* ─── ママ友レシピ ─── */}
       {mealPageTab === 'friend_recipes' && (
-        <FriendRecipesTab friendRecipes={friendRecipes} mealPlan={mealPlan} shopping={shopping} />
+        <FriendRecipesTab friendRecipes={friendRecipes} mealPlan={mealPlan} shopping={shopping} onOpenMamunity={() => setMealPageTab('mamunity')} />
       )}
 
       {/* ─── わが家レシピ ─── */}
@@ -487,6 +513,11 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
               <p style={{ fontSize: '28px', marginBottom: '8px' }}>🤔</p>
               <p style={{ color: '#A09890', fontSize: '14px' }}>うちのレシピがまだありません</p>
               <p style={{ fontSize: '12px', color: '#C0A898', marginTop: '4px' }}>右上の「＋ うちのレシピ」から登録しましょう</p>
+              <button onClick={() => setShowForm(true)}
+                style={{ marginTop: '16px', minHeight: '44px', width: '100%', borderRadius: '12px', border: 'none', backgroundColor: '#F48A7A', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                className="active:scale-95">
+                うちのレシピを登録
+              </button>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

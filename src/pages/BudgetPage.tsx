@@ -75,6 +75,7 @@ export default function BudgetPage({ budget }: Props) {
   const isOver = remaining < 0;
   const usagePercent = Math.min(100, Math.round((weekTotal / weeklyBudget.amount) * 100));
   const weekAllTotal = Object.values(categoryTotals).reduce((sum, v) => sum + v, 0);
+  const hasExpense = weekTotal > 0;
 
   const handleAddEntry = () => {
     if (!formAmount || !formStore.trim()) return;
@@ -147,7 +148,7 @@ export default function BudgetPage({ budget }: Props) {
       </div>
 
       {/* 節約メッセージ */}
-      {!isOver && projectedSavings > 0 && (
+      {(!isOver && (projectedSavings > 0 || !hasExpense)) && (
         <div style={{
           backgroundColor: '#E8F8F0',
           borderRadius: '16px',
@@ -157,15 +158,17 @@ export default function BudgetPage({ budget }: Props) {
           alignItems: 'center',
           gap: '12px',
         }}>
-          <span style={{ fontSize: '26px' }}>🎉</span>
+          <span style={{ fontSize: '26px' }}>{hasExpense ? '🎉' : '💡'}</span>
           <div>
             <p style={{ fontSize: '14px', fontWeight: 700, color: '#1A7A46', margin: 0 }}>
-              {daysLeft > 0 ? '節約ペースです！' : '今週お疲れさまでした！'}
+              {!hasExpense ? '支出を記録してみましょう' : daysLeft > 0 ? '今週の見通し' : '今週のまとめ'}
             </p>
             <p style={{ fontSize: '12px', color: '#2D8A5A', marginTop: '2px' }}>
-              {daysLeft > 0
-                ? <>このペースで <strong>¥{projectedSavings.toLocaleString()}</strong> 節約できそうです</>
-                : <>今週は <strong>¥{projectedSavings.toLocaleString()}</strong> 節約できました！</>
+              {!hasExpense
+                ? <>今週の支出を記録すると、残り予算や節約ペースが分かります</>
+                : daysLeft > 0
+                  ? <>このペースなら <strong>¥{projectedSavings.toLocaleString()}</strong> 残せそうです</>
+                  : <>今週は <strong>¥{projectedSavings.toLocaleString()}</strong> 節約できました</>
               }
             </p>
           </div>
@@ -353,7 +356,14 @@ export default function BudgetPage({ budget }: Props) {
         <p className="font-bold text-gray-800">支出履歴</p>
         {entries.length === 0 ? (
           <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
-            <p className="text-gray-400">支出の記録がありません</p>
+            <p className="text-gray-400 mb-3">支出の記録がありません</p>
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="w-full py-3 rounded-xl text-white font-bold text-sm active:scale-95 transition-transform"
+              style={{ backgroundColor: '#F97316' }}
+            >
+              支出を記録する
+            </button>
           </div>
         ) : (
           entries.slice(0, 20).map(entry => (

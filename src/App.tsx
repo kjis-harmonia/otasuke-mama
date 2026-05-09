@@ -56,10 +56,10 @@ function App() {
   const renderPage = () => {
     switch (activeTab) {
       case 'home':      return <HomePage      stock={stockHook} shopping={shoppingHook} budget={budgetHook} recipes={recipesHook} onTabChange={setActiveTab} onNavigateToExpiryRecipes={handleNavigateToExpiryRecipes} />;
-      case 'inventory': return <InventoryPage stock={stockHook} shopping={shoppingHook} />;
+      case 'inventory': return <InventoryPage stock={stockHook} shopping={shoppingHook} onTabChange={setActiveTab} />;
       case 'shopping':  return <ShoppingPage  shopping={shoppingHook} stock={stockHook} />;
       case 'budget':    return <BudgetPage    budget={budgetHook} />;
-      case 'recipes':   return <RecipesPage   recipes={recipesHook} shopping={shoppingHook} stock={stockHook} expiryTabTrigger={expiryTabTrigger} />;
+      case 'recipes':   return <RecipesPage   recipes={recipesHook} shopping={shoppingHook} stock={stockHook} onTabChange={setActiveTab} expiryTabTrigger={expiryTabTrigger} />;
       case 'settings':  return <SettingsPage  budget={budgetHook} onReset={resetAll} onResetSetup={resetSetup} />;
     }
   };
