@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import type { Recipe, CustomIngredient, CustomSeasoning } from '../types';
+import { useState, useRef } from 'react';
+import type { Recipe, CustomIngredient, CustomSeasoning, RecipeGenre, RecipeTag } from '../types';
 import { masterItems } from '../data/masterItems';
 import { QUANTITY_GROUPS } from '../data/quantityOptions';
 import type { CustomRecipeInput } from '../hooks/useCustomRecipes';
@@ -7,6 +7,35 @@ import type { CustomRecipeInput } from '../hooks/useCustomRecipes';
 interface Props {
   onSave: (recipe: CustomRecipeInput) => void;
   onClose: () => void;
+}
+
+const RECIPE_GENRES: RecipeGenre[] = ['主菜', '副菜', '汁物', '主食', '丼もの', '麺類', '作り置き', 'お弁当', 'おやつ'];
+const RECIPE_TAGS: RecipeTag[] = ['肉', '魚', '卵', '豆腐・大豆', '野菜', 'きのこ', '冷凍食品', '余りもの', '時短', '節約', '子どもOK', '野菜たっぷり', '使い切り', '冷蔵庫整理', 'フライパンだけ', '作り置き'];
+const PREFECTURES = ['北海道', '青森', '岩手', '宮城', '秋田', '山形', '福島', '茨城', '栃木', '群馬', '埼玉', '千葉', '東京', '神奈川', '新潟', '富山', '石川', '福井', '山梨', '長野', '岐阜', '静岡', '愛知', '三重', '滋賀', '京都', '大阪', '兵庫', '奈良', '和歌山', '鳥取', '島根', '岡山', '広島', '山口', '徳島', '香川', '愛媛', '高知', '福岡', '佐賀', '長崎', '熊本', '大分', '宮崎', '鹿児島', '沖縄'];
+
+function resizeRecipeImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const W = 400, H = 300;
+        const canvas = document.createElement('canvas');
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('canvas')); return; }
+        const scale = Math.max(W / img.width, H / img.height);
+        const sw = img.width * scale;
+        const sh = img.height * scale;
+        ctx.drawImage(img, (W - sw) / 2, (H - sh) / 2, sw, sh);
+        resolve(canvas.toDataURL('image/jpeg', 0.65));
+      };
+      img.onerror = reject;
+      img.src = ev.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 const CATEGORIES = ['ご飯もの', '麺', '肉料理', '魚料理', '野菜', '汁物', '副菜', '子ども向け', '節約'];
@@ -50,6 +79,12 @@ type FormState = {
   seasonings: SeasoningDraft[];
   stepsMemo: string;
   familyMemo: string;
+  publishToMamunity: boolean;
+  prefectureLabel: string;
+  publicComment: string;
+  imageData: string | undefined;
+  genre: RecipeGenre | undefined;
+  recipeTags: RecipeTag[];
 };
 
 const INITIAL_FORM: FormState = {
@@ -63,6 +98,12 @@ const INITIAL_FORM: FormState = {
   seasonings: [],
   stepsMemo: '',
   familyMemo: '',
+  publishToMamunity: false,
+  prefectureLabel: '',
+  publicComment: '',
+  imageData: undefined,
+  genre: undefined,
+  recipeTags: [],
 };
 
 // ── 材料行コンポーネント ──────────────────────────────────────────
@@ -198,7 +239,24 @@ function IngredientRow({
 export default function CustomRecipeForm({ onSave, onClose }: Props) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [showDetails, setShowDetails] = useState(false);
+  const [showMamunity, setShowMamunity] = useState(false);
   const [nameError, setNameError] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const imgInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImg(true);
+    try {
+      const data = await resizeRecipeImage(file);
+      update({ imageData: data });
+    } catch { /* ignore */ }
+    finally {
+      setUploadingImg(false);
+      if (imgInputRef.current) imgInputRef.current.value = '';
+    }
+  };
 
   const update = (patch: Partial<FormState>) => setForm(prev => ({ ...prev, ...patch }));
 
@@ -265,6 +323,13 @@ export default function CustomRecipeForm({ onSave, onClose }: Props) {
       seasonings,
       familyMemo: form.familyMemo.trim() || undefined,
       stepsMemo: form.stepsMemo.trim() || undefined,
+      genre: form.genre,
+      recipeTags: form.recipeTags.length > 0 ? form.recipeTags : undefined,
+      publishToMamunity: form.publishToMamunity,
+      mamunityStatus: form.publishToMamunity ? 'published' : 'private',
+      prefectureLabel: form.publishToMamunity ? form.prefectureLabel.trim() || undefined : undefined,
+      publicComment: form.publishToMamunity ? form.publicComment.trim() || undefined : undefined,
+      imageData: form.imageData,
     });
   };
 
@@ -436,7 +501,7 @@ export default function CustomRecipeForm({ onSave, onClose }: Props) {
         </section>
 
         {/* ── 詳細（折りたたみ） ── */}
-        <section style={{ marginBottom: '16px' }}>
+        <section style={{ marginBottom: '12px' }}>
           <button
             onClick={() => setShowDetails(!showDetails)}
             style={{
@@ -514,6 +579,33 @@ export default function CustomRecipeForm({ onSave, onClose }: Props) {
                 />
               </div>
 
+              {/* ジャンル */}
+              <div>
+                <label style={fieldLabel}>📂 ジャンル（任意）</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {RECIPE_GENRES.map(g => (
+                    <button key={g} style={chipStyle(form.genre === g)} onClick={() => update({ genre: form.genre === g ? undefined : g })}>{g}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* タグ */}
+              <div>
+                <label style={fieldLabel}>🏷️ タグ（複数選択可）</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {RECIPE_TAGS.map(tag => {
+                    const selected = form.recipeTags.includes(tag);
+                    return (
+                      <button key={tag}
+                        style={chipStyle(selected)}
+                        onClick={() => update({ recipeTags: selected ? form.recipeTags.filter(t => t !== tag) : [...form.recipeTags, tag] })}>
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* 節約フラグ */}
               <div style={{
                 display: 'flex',
@@ -556,6 +648,72 @@ export default function CustomRecipeForm({ onSave, onClose }: Props) {
                   }} />
                 </button>
               </div>
+            </div>
+          )}
+        </section>
+        {/* ── ママニティ掲載設定（折りたたみ） ── */}
+        <section style={{ marginBottom: '16px' }}>
+          <button
+            onClick={() => setShowMamunity(!showMamunity)}
+            style={{ width: '100%', padding: '12px', backgroundColor: showMamunity ? '#EDE8FA' : '#F0E8E4', borderRadius: '12px', border: 'none', fontSize: '13px', fontWeight: 600, color: showMamunity ? '#7C5FB5' : '#8C7068', cursor: 'pointer', marginBottom: showMamunity ? '16px' : '0' }}>
+            {showMamunity ? '▲ ママニティ掲載設定を閉じる' : '▼ ママニティ掲載設定（任意）'}
+          </button>
+          {showMamunity && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ backgroundColor: '#F0E8FF', borderRadius: '12px', padding: '10px 14px' }}>
+                <p style={{ fontSize: '12px', color: '#7C5FB5', fontWeight: 600, margin: '0 0 2px' }}>📢 ママニティに掲載しますか？</p>
+                <p style={{ fontSize: '11px', color: '#A09890', margin: 0 }}>現在はサンプルデータのみ。将来の公開機能の準備です</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[false, true].map(val => (
+                  <button key={String(val)}
+                    style={{ flex: 1, padding: '10px', borderRadius: '12px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer', backgroundColor: form.publishToMamunity === val ? (val ? '#EDE8FA' : '#F0E8E4') : '#F8F4F0', color: form.publishToMamunity === val ? (val ? '#7C5FB5' : '#5A4A44') : '#A09890' }}
+                    onClick={() => update({ publishToMamunity: val })}>
+                    {val ? '📢 掲載する' : '🔒 自分だけで使う'}
+                  </button>
+                ))}
+              </div>
+
+              {form.publishToMamunity && (
+                <>
+                  <div>
+                    <label style={fieldLabel}>表示名（例：広島ママ）</label>
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                      {PREFECTURES.slice(0, 12).map(p => (
+                        <button key={p} onClick={() => update({ prefectureLabel: `${p}ママ` })}
+                          style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: form.prefectureLabel === `${p}ママ` ? '#EDE8FA' : '#F0E8E4', color: form.prefectureLabel === `${p}ママ` ? '#7C5FB5' : '#8C7068' }}>
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                    <input style={inputStyle} placeholder="例：広島ママ、東京ママ" value={form.prefectureLabel}
+                      onChange={e => update({ prefectureLabel: e.target.value })} />
+                  </div>
+
+                  <div>
+                    <label style={fieldLabel}>ひとことコメント</label>
+                    <input style={inputStyle} placeholder="例：子どもがよく食べました！" value={form.publicComment}
+                      onChange={e => update({ publicComment: e.target.value })} />
+                  </div>
+
+                  <div>
+                    <label style={fieldLabel}>レシピ画像（1枚・任意）</label>
+                    {form.imageData ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
+                        <img src={form.imageData} alt="recipe" style={{ width: '100%', maxWidth: '200px', height: '150px', objectFit: 'cover', borderRadius: '12px', border: '1.5px solid #EDE8FA' }} />
+                        <button onClick={() => update({ imageData: undefined })} style={{ fontSize: '12px', color: '#B84030', background: 'none', border: 'none', cursor: 'pointer' }}>画像を削除</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => imgInputRef.current?.click()} disabled={uploadingImg}
+                        style={{ padding: '10px 20px', borderRadius: '12px', border: '1.5px dashed #C8B8E8', backgroundColor: '#F8F4FF', fontSize: '13px', color: '#7C5FB5', fontWeight: 600, cursor: uploadingImg ? 'default' : 'pointer', opacity: uploadingImg ? 0.6 : 1 }}>
+                        {uploadingImg ? '処理中...' : '📷 画像を選択'}
+                      </button>
+                    )}
+                    <input ref={imgInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageSelect} />
+                  </div>
+                </>
+              )}
             </div>
           )}
         </section>

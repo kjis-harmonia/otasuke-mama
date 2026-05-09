@@ -10,8 +10,10 @@ import { getExpiryInfo, isAlertExpiry } from '../utils/expiryUtils';
 import MiniGuide from '../components/MiniGuide';
 import { isTabGuideSeen, markTabGuideSeen } from '../hooks/useGuide';
 import { useMealPlan } from '../hooks/useMealPlan';
+import { useFriendRecipes } from '../hooks/useFriendRecipes';
 import WeeklyMealPlan from '../components/WeeklyMealPlan';
 import MamunityFeed from '../components/MamunityFeed';
+import FriendRecipesTab from '../components/FriendRecipesTab';
 
 interface Props {
   recipes: UseRecipesReturn;
@@ -20,7 +22,7 @@ interface Props {
   expiryTabTrigger?: number;
 }
 
-type MealPageTab = 'today' | 'weekly' | 'mamunity' | 'my_recipes';
+type MealPageTab = 'today' | 'weekly' | 'mamunity' | 'my_recipes' | 'friend_recipes';
 type RecipeTab = 'can_cook' | 'one_more' | 'two_more' | 'savings' | 'expiry';
 
 const portionFeedbackOptions: { value: PortionFeedback; label: string }[] = [
@@ -246,6 +248,7 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
   const [tasteFeedback, setTasteFeedback] = useState<TasteFeedback>('just_right');
   const [showForm, setShowForm] = useState(false);
   const mealPlan = useMealPlan();
+  const friendRecipes = useFriendRecipes();
 
   useEffect(() => {
     if (expiryTabTrigger && expiryTabTrigger > 0) {
@@ -324,10 +327,11 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
     expiryMatches;
 
   const outerTabs: { id: MealPageTab; label: string; emoji: string }[] = [
-    { id: 'today',      label: '今日作れる',   emoji: '✅' },
-    { id: 'weekly',     label: '1週間献立',    emoji: '📅' },
-    { id: 'mamunity',   label: 'ママニティ',   emoji: '👥' },
-    { id: 'my_recipes', label: 'わが家レシピ', emoji: '🏠' },
+    { id: 'today',          label: '今日作れる',   emoji: '✅' },
+    { id: 'weekly',         label: '1週間献立',    emoji: '📅' },
+    { id: 'mamunity',       label: 'ママニティ',   emoji: '👥' },
+    { id: 'my_recipes',     label: 'わが家レシピ', emoji: '🏠' },
+    { id: 'friend_recipes', label: 'ママ友レシピ', emoji: '👩‍🍳' },
   ];
 
   return (
@@ -345,10 +349,11 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#2F2F3A', margin: 0 }}>🍴 献立</h1>
           <p style={{ fontSize: '13px', color: '#A09890', margin: '4px 0 0' }}>
-            {mealPageTab === 'today'      && '在庫から作れるメニューを提案'}
-            {mealPageTab === 'weekly'     && '今週の献立を計画しよう'}
-            {mealPageTab === 'mamunity'   && '全国ママの献立アイデア'}
-            {mealPageTab === 'my_recipes' && 'うちだけのオリジナルレシピ'}
+            {mealPageTab === 'today'          && '在庫から作れるメニューを提案'}
+            {mealPageTab === 'weekly'         && '今週の献立を計画しよう'}
+            {mealPageTab === 'mamunity'       && '全国ママの献立アイデア'}
+            {mealPageTab === 'my_recipes'     && 'うちだけのオリジナルレシピ'}
+            {mealPageTab === 'friend_recipes' && '保存したママ友レシピ'}
           </p>
         </div>
         {mealPageTab === 'my_recipes' && (
@@ -456,12 +461,17 @@ export default function RecipesPage({ recipes, shopping, stock, expiryTabTrigger
 
       {/* ─── 1週間献立 ─── */}
       {mealPageTab === 'weekly' && (
-        <WeeklyMealPlan mealPlan={mealPlan} shopping={shopping} />
+        <WeeklyMealPlan mealPlan={mealPlan} shopping={shopping} friendRecipes={friendRecipes} />
       )}
 
       {/* ─── ママニティ ─── */}
       {mealPageTab === 'mamunity' && (
-        <MamunityFeed mealPlan={mealPlan} />
+        <MamunityFeed mealPlan={mealPlan} friendRecipes={friendRecipes} shopping={shopping} />
+      )}
+
+      {/* ─── ママ友レシピ ─── */}
+      {mealPageTab === 'friend_recipes' && (
+        <FriendRecipesTab friendRecipes={friendRecipes} mealPlan={mealPlan} shopping={shopping} />
       )}
 
       {/* ─── わが家レシピ ─── */}

@@ -80,6 +80,12 @@ export interface BudgetEntry {
   memo: string;
 }
 
+// ─── レシピ分類 ───────────────────────────────────────────────
+export type RecipeGenre = '主菜' | '副菜' | '汁物' | '主食' | '丼もの' | '麺類' | '作り置き' | 'お弁当' | 'おやつ';
+export type RecipeIngredientTag = '肉' | '魚' | '卵' | '豆腐・大豆' | '野菜' | 'きのこ' | '冷凍食品' | '余りもの';
+export type RecipePurposeTag = '時短' | '節約' | '子どもOK' | '野菜たっぷり' | '使い切り' | '冷蔵庫整理' | 'レンジ調理' | 'フライパンだけ' | '火を使わない' | '作り置き';
+export type RecipeTag = RecipeIngredientTag | RecipePurposeTag;
+
 // ─── レシピ ────────────────────────────────────────────────
 
 /**
@@ -127,6 +133,13 @@ export interface Recipe {
   seasonings?: CustomSeasoning[];
   familyMemo?: string;
   stepsMemo?: string;
+  genre?: RecipeGenre;
+  recipeTags?: RecipeTag[];
+  publishToMamunity?: boolean;
+  mamunityStatus?: 'private' | 'published';
+  prefectureLabel?: string;
+  publicComment?: string;
+  imageData?: string;
 }
 
 // ─── レシピ照合 ────────────────────────────────────────────
@@ -241,6 +254,34 @@ export interface MealEntry {
   note?: string;
   source: 'manual' | 'recipe' | 'mamunity';
   ingredients?: MealIngredient[];
+  recipeSource?: 'home' | 'friend' | 'manual' | 'mamunity';
+  recipeId?: string;
+}
+
+// ─── 投稿食材 ─────────────────────────────────────────────────
+export interface PostIngredient {
+  name: string;
+  emoji: string;
+  amountLabel?: string;
+}
+
+// ─── ママ友レシピ ─────────────────────────────────────────────
+export interface SavedFriendRecipe {
+  id: string;
+  sourcePostId?: string;
+  sourceType: 'mamunity';
+  sourcePrefectureLabel: string;
+  title: string;
+  emoji: string;
+  comment?: string;
+  imageData?: string;
+  genre: RecipeGenre;
+  tags: RecipeTag[];
+  ingredients: PostIngredient[];
+  seasonings?: { name: string; amountLabel: string }[];
+  steps?: string[];
+  memo?: string;
+  savedAt: string;
 }
 
 // ─── ママニティ ────────────────────────────────────────────────
@@ -252,8 +293,12 @@ export interface MamunityPost {
   dishName: string;
   dishEmoji: string;
   likes: number;
-  tags: string[];
+  genre: RecipeGenre;
+  tags: RecipeTag[];
   postedAt: string;
+  ingredients?: PostIngredient[];
+  seasonings?: { name: string; amountLabel: string }[];
+  steps?: string[];
 }
 
 // ─── アプリ全体 ───────────────────────────────────────────
